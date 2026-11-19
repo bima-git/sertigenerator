@@ -2,34 +2,30 @@
 
 **Nama / Peran:** Bima — Backend Logic, Penomoran (*Numbering Engine*) & Proses Penerbitan (*Issuance Orchestrator*)  
 **Branch Git:** `feature/bima-numbering`  
-**Status Tahap:** Langkah 1 (Fase 2A - Engine Penomoran Murni) Selesai — **100% Lulus Uji Otomatis**  
+**Status Tahap:** Langkah 1 & Langkah 2 (Fase 2A & Fase 2B) Selesai — **100% Lulus Uji Otomatis (32 Tests, 73 Assertions)**  
 **Terakhir Diperbarui:** 19 November 2026
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-Dokumen ini mencatat seluruh detail implementasi, arsitektur kelas, dan hasil pengujian yang telah diselesaikan oleh Bima. Dokumen ini dapat digunakan sebagai referensi penjelasan teknis kepada rekan kolaborator tim (**Akmal, Ifant, dan Giska**) untuk memastikan titik integrasi antar-modul berjalan selaras sesuai PRD dan Design System.
+Dokumen ini mencatat seluruh detail implementasi, arsitektur kelas, skema data, dan hasil pengujian yang telah diselesaikan oleh Bima. Dokumen ini dirancang sebagai referensi teknis yang transparan dan dapat dibagikan kepada seluruh rekan tim (**Akmal, Ifant, dan Giska**) agar proses integrasi berjalan lancar tanpa tumpang tindih.
 
 ---
 
-## 2. Rincian Modul yang Telah Selesai Dibangun (Langkah 1)
+## 2. Rincian Modul yang Telah Selesai Dibangun
 
-### A. Helper Angka Romawi (`App\Services\Roman`)
+### A. Helper Angka Romawi (`App\Services\Roman`) — *Langkah 1*
 * **Lokasi Berkas:** [`app/Services/Roman.php`](file:///D:/MAGANG_2026/sertigenerator/app/Services/Roman.php)
 * **Fungsi Utama:**
-  1. `Roman::fromMonth(int $month): string`
-     * Mengonversi angka bulan (1 s.d. 12) menjadi representasi Romawi resmi XCODE (`I` sampai `XII`).
-     * Dilengkapi validasi ketat: melempar `InvalidArgumentException` jika bulan di luar rentang 1–12.
-  2. `Roman::toRoman(int $number): string`
-     * Konversi umum angka desimal (1 s.d. 3999) ke angka Romawi (mendukung kebutuhan formatting lainnya).
+  1. `Roman::fromMonth(int $month): string`: Mengonversi angka bulan (1 s.d. 12) menjadi representasi Romawi resmi XCODE (`I` sampai `XII`). Melempar `InvalidArgumentException` jika bulan di luar rentang 1–12.
+  2. `Roman::toRoman(int $number): string`: Konversi umum angka desimal (1 s.d. 3999) ke angka Romawi.
 
 ---
 
-### B. Service Pembangun Nomor Sertifikat (`App\Services\NumberGenerator`)
+### B. Service Pembangun Nomor Sertifikat (`App\Services\NumberGenerator`) — *Langkah 1*
 * **Lokasi Berkas:** [`app/Services/NumberGenerator.php`](file:///D:/MAGANG_2026/sertigenerator/app/Services/NumberGenerator.php)
-* **Aturan Bisnis Sesuai PRD:**
-  Sesuai aturan bisnis **AB-03**, seluruh nomor sertifikat resmi pada sistem ini **hanya boleh dibangun** melalui kelas `NumberGenerator::build()`.
+* **Aturan Bisnis PRD AB-03:** Seluruh nomor sertifikat resmi pada sistem ini **hanya boleh dibangun** melalui satu pintu: `NumberGenerator::build()`.
 * **Formula Resmi:**
   ```text
   {kode}/{seri}/{urut}/{penerbit}/{bulan_romawi}/{tahun}
@@ -37,69 +33,81 @@ Dokumen ini mencatat seluruh detail implementasi, arsitektur kelas, dan hasil pe
   ```
 * **Fungsi-Fungsi yang Tersedia:**
   1. `NumberGenerator::build(string $kode, int|string $seri, int|string $urut, string $penerbit, DateTimeInterface|string $tanggalTerbit): string`
-     * **`kode`**: Kode kegiatan (string teks, misal: `'35'`, `'255'`, `'15'`).
-     * **`seri`**: Nomor seri (otomatis di-*pad* 3 digit menjadi `'001'`).
-     * **`urut`**: Nomor urut peserta (otomatis di-*pad* 3 digit, misal 3 menjadi `'003'`, 15 menjadi `'015'`).
-     * **`penerbit`**: Nama penerbit resmi (misal: `'Xcodetraining'`, `'Bootcamp'`, `'SiberExpert'`).
-     * **`tanggalTerbit`**: Menerima objek `Carbon`, `DateTime`, maupun string tanggal (misal `'2026-10-24'`). Zona waktu dipatok ke `Asia/Jakarta`. Bulan dikonversi otomatis ke angka Romawi dan tahun diekstrak 4 digit.
-  2. `NumberGenerator::parse(string $nomor): array`
-     * Memecah string nomor sertifikat yang sudah jadi ke dalam array terstruktur: `['kode', 'seri', 'urut', 'penerbit', 'bulan_romawi', 'tahun']`.
-  3. `NumberGenerator::isValid(string $nomor): bool`
-     * Memvalidasi apakah sebuah string mematuhi pola format resmi sertifikat XCODE.
+     * Format padding 3 digit otomatis pada seri (`001`) dan nomor urut (`003`).
+     * Parsing tanggal fleksibel (`Carbon`, `DateTime`, atau string `'2026-10-24'`) dengan zona waktu `Asia/Jakarta`.
+     * Validasi ketat input (kode/penerbit tidak boleh kosong, seri/urut wajib bilangan bulat positif).
+  2. `NumberGenerator::parse(string $nomor): array`: Memecah string nomor resmi menjadi array segmen terstruktur.
+  3. `NumberGenerator::isValid(string $nomor): bool`: Validasi regex format nomor.
 
 ---
 
-## 3. Hasil Pengujian Unit Test (Otomatis)
+### C. Skema Basis Data & Model Eloquent — *Langkah 2*
+Sesuai **PRD Bagian 7.1**, dibuat tabel dan model data pendukung penomoran:
+1. **Tabel & Model `Event`:**
+   * Berkas: [`database/migrations/2026_11_19_000001_create_events_table.php`](file:///D:/MAGANG_2026/sertigenerator/database/migrations/2026_11_19_000001_create_events_table.php) & [`app/Models/Event.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/Event.php)
+   * Menyimpan master kegiatan: `kode`, `judul`, `jenis`, `penerbit`, `bernomor`, `pakai_qr`, `program_default`, `aktif`.
+2. **Tabel & Model `Certificate`:**
+   * Berkas: [`database/migrations/2026_11_19_000002_create_certificates_table.php`](file:///D:/MAGANG_2026/sertigenerator/database/migrations/2026_11_19_000002_create_certificates_table.php) & [`app/Models/Certificate.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/Certificate.php)
+   * Dilengkapi constraint integritas ganda:
+     * `UNIQUE KEY (nomor_lengkap)`
+     * `UNIQUE KEY uq_event_seri_urut_tahun (event_id, seri, urut, tahun)`
 
-Pengujian dilakukan menggunakan PHPUnit / test suite Laravel (`php artisan test --testsuite=Unit`). Seluruh kasus uji wajib yang tercantum pada **PRD Bagian 5.3** telah diuji dan **100% HIJAU (PASS)**.
+---
 
-### Matriks Pengujian Kasus Uji Wajib PRD 5.3:
+### D. Service Pengalokasi Nomor Urut (`App\Services\NumberAllocator`) — *Langkah 2*
+* **Lokasi Berkas:** [`app/Services/NumberAllocator.php`](file:///D:/MAGANG_2026/sertigenerator/app/Services/NumberAllocator.php)
+* **Aturan Bisnis Sesuai PRD NM-03 & NM-04:**
+  1. `next(int $eventId, int $seri, int $tahun): int`
+     * Menghitung nilai maksimum urut pada kombinasi `(event_id, seri, tahun)` lalu ditambah 1:
+       $$\text{COALESCE}(\max(\text{urut}), 0) + 1$$
+     * **Sertifikat yang berstatus `dibatalkan` tetap ikut dihitung**, sehingga nomor yang sudah pernah dibatalkan tidak akan pernah dialokasikan ulang untuk peserta baru.
+  2. `isAvailable(int $eventId, int $seri, int $urut, int $tahun): bool`
+     * Memeriksa apakah kombinasi nomor tertentu masih bebas sebelum disimpan.
+  3. `isNumberTaken(string $nomorLengkap): bool`
+     * Pengecekan cepat ketersediaan nomor lengkap di database.
+  4. `suggest(Event|int $event, int $seri = 1, DateTimeInterface|string|null $tanggalTerbit = null, ?int $manualUrut = null): array`
+     * Helper terpadu yang menghasilkan payload saran nomor lengkap, status ketersediaan, serta penanganan otomatis untuk kegiatan tanpa nomor (bootcamp).
 
-| Kasus | Input Pengujian | Target Hasil PRD | Status Uji |
-|:---:|---|---|:---:|
-| **1** | Kode `35`, seri 1, urut 3, `Xcodetraining`, `2026-10-24` | `35/001/003/Xcodetraining/X/2026` | ✅ **PASS** |
-| **2** | Kode `35`, seri 1, urut 9, `Xcodetraining`, `2026-10-24` | `35/001/009/Xcodetraining/X/2026` | ✅ **PASS** |
-| **3** | Kode `35`, seri 1, urut 15, `Xcodetraining`, `2026-10-24` | `35/001/015/Xcodetraining/X/2026` | ✅ **PASS** |
-| **4** | Kode `15`, seri 1, urut 1, `Bootcamp`, `2025-02-10` | `15/001/001/Bootcamp/II/2025` | ✅ **PASS** |
-| **5** | Kode `23`, seri 1, urut 1, `SiberExpert`, `2024-05-03` | `23/001/001/SiberExpert/V/2024` | ✅ **PASS** |
-| **6** | Kode `255`, seri 1, urut 1, `Xcodetraining`, `2026-12-01` | `255/001/001/Xcodetraining/XII/2026` | ✅ **PASS** |
-| **7** | Batas awal & akhir tahun (`2026-01-31` & `2026-12-31`) | `I/2026` dan `XII/2026` | ✅ **PASS** |
-| **8** | Input invalid (kode kosong, seri <= 0, urut <= 0) | Melempar `InvalidArgumentException` | ✅ **PASS** |
-| **9** | Parsing & validasi regex nomor lengkap | Komponen segmen terekstraksi tepat | ✅ **PASS** |
+---
 
-* **Total Test Suite Unit:** **20 passed, 47 assertions** (Waktu eksekusi: ~0.29s).
+## 3. Hasil Pengujian Otomatis (*Automated Tests*)
+
+Pengujian dijalankan melalui `php artisan test`. Seluruh 32 pengujian berstatus **100% HIJAU (PASS)**.
+
+### A. Pengujian Unit Test (`tests/Unit/Services/`): 20 Tests, 47 Assertions
+* **`NumberGeneratorTest` (14 pengujian):** Lulus 100% seluruh kasus uji wajib PRD 5.3 (Kasus 1 s.d. 7, kode `35`, `15`, `23`, `255`, batas bulan Januari/Desember, parsing, dan proteksi input tidak valid).
+* **`RomanTest` (5 pengujian):** Lulus konversi bulan 1–12, konversi umum hingga 3999, serta penanganan exception angka di luar batas.
+
+### B. Pengujian Feature / Integrasi Database (`tests/Feature/Services/NumberAllocatorTest.php`): 11 Tests, 25 Assertions
+1. `test_next_returns_one_when_no_certificates_exist`: Alokasi awal dimulai dari nomor 1.
+2. `test_next_increments_sequentially`: Nomor urut bertambah sekuensial (1 -> 2 -> 3).
+3. `test_next_follows_max_value_when_non_sequential`: Jika ada loncatan nomor manual oleh operator, saran berikutnya adalah `MAX + 1`.
+4. `test_allocation_is_isolated_per_series`: Penomoran diisolasi per nomor seri (seri 1 tidak mencampuri seri 2).
+5. `test_allocation_is_isolated_per_year`: Penomoran diisolasi per tahun terbit (tahun 2025 tidak mencampuri tahun 2026).
+6. `test_allocation_is_isolated_per_event`: Penomoran diisolasi antar-event yang berbeda.
+7. `test_cancelled_certificates_are_included_in_next_calculation`: Sertifikat berstatus dibatalkan tetap dihitung, nomor batal tidak dipakai ulang.
+8. `test_is_available_checks_availability`: Mendeteksi nomor bebas vs nomor yang sudah terpakai (termasuk yang dibatalkan).
+9. `test_suggest_returns_complete_payload_for_numbered_event`: Menghasilkan payload lengkap dan valid untuk form penerbitan seminar.
+10. `test_suggest_returns_null_fields_for_unnumbered_event`: Menghasilkan `bernomor => false` dan nomor `null` untuk kegiatan bootcamp.
+11. `test_database_enforces_unique_constraint`: Database menolak duplikasi nomor via `QueryException` pada *unique constraint*.
 
 ---
 
 ## 4. Panduan Titik Integrasi untuk Rekan Tim
 
-### 1. Untuk Giska (Frontend & UI):
-* **Fungsi yang akan dipakai:** Saat Giska membuat form dinamis penerbitan di Fase 6, form akan memanggil endpoint `GET /api/nomor`.
-* Output dari endpoint tersebut akan memanfaatkan `NumberGenerator::build()` untuk mengirim string nomor lengkap sehingga komponen Blade `number-preview` dan `summary-panel` dapat menampilkan pratinjau nomor secara *realtime* kepada operator sebelum tombol terbitkan diklik.
-
-### 2. Untuk Ifant (PDF Generator):
-* **Kebutuhan PDF:** Di template PDF Seminar, string nomor sertifikat dicetak pada posisi:
-  * Koordinat: **X = 259 mm (Center)**, **Baseline Y = 77.2 mm**.
-  * Font: Serif ~10 pt (maksimal lebar 58 mm).
-* Ifant cukup mengambil field `nomor_lengkap` dari model sertifikat yang telah digenerate oleh modul Bima.
-
-### 3. Untuk Akmal (Database & Administrasi):
-* **Struktur Kolom Database:**
-  * Tabel `certificates` membutuhkan kolom:
-    * `seri SMALLINT UNSIGNED NULL`
-    * `urut SMALLINT UNSIGNED NULL`
-    * `tahun SMALLINT UNSIGNED NOT NULL`
-    * `nomor_lengkap VARCHAR(120) NULL UNIQUE`
-    * `UNIQUE KEY uq_event_seri_urut_tahun (event_id, seri, urut, tahun)`
-* **Aturan Konkurensi:** Pada transaksi penerbitan, baris tabel `events` wajib dikunci menggunakan `lockForUpdate()` agar alokasi nomor urut bebas dari *race condition*.
+| Rekan Tim | Titik Kolaborasi dengan Bima | Kontrak / Panduan Teknis |
+|---|---|---|
+| **Giska** (Frontend) | Form Penerbitan Dinamis | Giska akan memanggil endpoint `GET /api/nomor` (Langkah 3) yang langsung didukung oleh `NumberAllocator::suggest()`. Output menyajikan saran urut dan pratinjau string nomor secara *realtime*. |
+| **Ifant** (PDF Generator) | Pemasangan Nomor di Template Seminar | Ifant mencetak string `nomor_lengkap` pada koordinat A4 Seminar: **X = 259 mm (Center)**, **Baseline Y = 77.2 mm**, font Serif ~10 pt. |
+| **Akmal** (Database & Admin) | Skema Tabel `events` & `certificates` | Skema yang dibuat Bima 100% identik dengan PRD 7.1. Pada transaksi penerbitan (Langkah 4), baris `events` dikunci dengan `lockForUpdate()`. |
 
 ---
 
-## 5. Rencana Langkah Berikutnya (Langkah 2)
+## 5. Rencana Langkah Berikutnya (Langkah 3)
 
 Tahap berikutnya yang akan dikerjakan oleh Bima:
-1. Menyiapkan service **`App\Services\NumberAllocator`**:
-   * Menghitung nomor urut saran sistem (`COALESCE(MAX(urut), 0) + 1`) per `(event_id, seri, tahun)`.
-   * Menjamin nomor dari sertifikat yang berstatus **dibatalkan tetap dihitung** (tidak boleh dipakai ulang).
-   * Fitur pengecekan ketersediaan nomor jika operator menginput nomor urut manual.
-2. Menulis Feature/Integration Test untuk `NumberAllocator`.
+* **Langkah 3: Endpoint API Penomoran untuk Frontend Giska (`GET /api/nomor`)**
+  * Membangun controller / method `IssueController@suggest` (Route: `api.number`).
+  * Menerima query parameter: `event_id`, `seri` (default 1), `tanggal_terbit`, dan `urut` (opsional jika ditimpa operator).
+  * Mengembalikan respons JSON siap pakai untuk frontend form dinamis Giska.
+  * Menulis Feature Test untuk memastikan respon API konsisten dan menangani validasi input.
