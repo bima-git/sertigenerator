@@ -34,6 +34,7 @@ class PdfRenderer
             (string) $certificate->jenis,
             $this->mapper->map($certificate),
             CertificateMode::fromInput($mode),
+            versiLayout: $certificate->versi_layout,
         );
     }
 }

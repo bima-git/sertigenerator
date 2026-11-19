@@ -35,8 +35,9 @@ final class CertificateRenderer
         bool $withBackground = true,
         ?string $backgroundPath = null,
         bool $withGuides = false,
+        ?string $versiLayout = null,
     ): string {
-        $layout = $this->layouts->get($jenis);
+        $layout = $this->layouts->get($jenis, $versiLayout);
 
         $pdf = $this->newDocument($layout, $jenis, $mode);
 

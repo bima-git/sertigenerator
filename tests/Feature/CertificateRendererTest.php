@@ -186,6 +186,43 @@ final class CertificateRendererTest extends TestCase
         $this->assertStringContainsString('Direktur Operasional', $teks);
     }
 
+    public function test_uses_archived_layout_for_requested_version(): void
+    {
+        /** @var array<string, mixed> $aktif */
+        $aktif = require config_path('layout/seminar.php');
+        $aktif['font'] = ['serif' => 'times', 'serif_bold' => 'times', 'fallback' => 'times'];
+
+        $lama = $aktif;
+        $lama['versi'] = '1.1';
+        $lama['elements']['penanda_arsip'] = [
+            'type' => 'text',
+            'text' => 'KOORDINAT ARSIP',
+            'x' => 20,
+            'y' => 20,
+            'align' => 'L',
+            'size' => 10,
+        ];
+
+        $this->app->instance(LayoutConfig::class, new LayoutConfig(
+            ['seminar' => $aktif],
+            ['seminar-1.1' => $lama],
+        ));
+
+        $renderer = $this->app->make(CertificateRenderer::class);
+
+        $arsip = $this->textOf($renderer->render(
+            'seminar',
+            $this->seminarData(),
+            withBackground: false,
+            versiLayout: '1.1',
+        ));
+
+        $terkini = $this->textOf($renderer->render('seminar', $this->seminarData(), withBackground: false));
+
+        $this->assertStringContainsString('KOORDINAT ARSIP', $arsip);
+        $this->assertStringNotContainsString('KOORDINAT ARSIP', $terkini);
+    }
+
     /**
      * @return array<string, string>
      */

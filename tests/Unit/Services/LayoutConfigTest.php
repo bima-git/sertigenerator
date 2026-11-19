@@ -231,6 +231,52 @@ final class LayoutConfigTest extends TestCase
         }
     }
 
+    public function test_uses_archived_layout_for_requested_version(): void
+    {
+        $arsip = $this->layout();
+        $arsip['versi'] = '1.1';
+
+        $config = new LayoutConfig(
+            ['seminar' => $this->layout()],
+            ['seminar-1.1' => $arsip],
+        );
+
+        $this->assertSame('1.1', $config->get('seminar', '1.1')['versi']);
+        $this->assertSame('1.0', $config->get('seminar')['versi']);
+    }
+
+    public function test_falls_back_to_active_layout_for_unarchived_version(): void
+    {
+        $config = new LayoutConfig(['seminar' => $this->layout()], []);
+
+        $this->assertSame('1.0', $config->get('seminar', '0.9')['versi']);
+    }
+
+    public function test_rejects_invalid_archived_layout(): void
+    {
+        $arsip = $this->layout();
+        unset($arsip['page']);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Layout 'arsip seminar-1.1' kehilangan blok 'page'");
+
+        new LayoutConfig(['seminar' => $this->layout()], ['seminar-1.1' => $arsip]);
+    }
+
+    public function test_shipped_archives_match_their_active_versions(): void
+    {
+        foreach (['seminar' => '1.2', 'bootcamp' => '1.3'] as $jenis => $versi) {
+            $arsip = $this->shipped('arsip/'.$jenis.'-'.$versi);
+
+            $this->assertSame($versi, $arsip['versi']);
+
+            // Arsip wajib bisa dimuat mesin validasi yang sama dengan layout aktif.
+            $config = new LayoutConfig([$jenis => $this->shipped($jenis)], [$jenis.'-'.$versi => $arsip]);
+
+            $this->assertSame($versi, $config->get($jenis, $versi)['versi']);
+        }
+    }
+
     public function test_rejects_line_without_thickness(): void
     {
         $layout = $this->layout();

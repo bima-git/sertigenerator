@@ -22,9 +22,11 @@ final class LayoutConfig
 
     /**
      * @param  array<string, mixed>  $layouts
+     * @param  array<string, mixed>  $arsip  Layout beku dengan kunci "jenis-versi".
      */
     public function __construct(
         private readonly array $layouts,
+        private readonly array $arsip = [],
     ) {
         if ($layouts === []) {
             throw new InvalidArgumentException('Konfigurasi layout kosong. Periksa folder config/layout.');
@@ -33,11 +35,30 @@ final class LayoutConfig
         foreach ($layouts as $jenis => $layout) {
             $this->periksaLayout((string) $jenis, $layout);
         }
+
+        foreach ($arsip as $kunci => $layout) {
+            $this->periksaLayout('arsip '.$kunci, $layout);
+        }
     }
 
     public static function fromConfig(): self
     {
-        return new self((array) config('layout', []));
+        $layouts = (array) config('layout', []);
+
+        // config/layout/arsip berisi salinan beku per versi, bukan jenis aktif.
+        // Berkas dibaca langsung karena nama seperti "seminar-1.2.php" pecah bila
+        // dimuat sebagai kunci config (titik dianggap pemisah).
+        unset($layouts['arsip']);
+
+        $arsip = [];
+
+        foreach (glob(config_path('layout/arsip/*.php')) ?: [] as $berkas) {
+            /** @var mixed $layout */
+            $layout = require $berkas;
+            $arsip[basename($berkas, '.php')] = $layout;
+        }
+
+        return new self($layouts, $arsip);
     }
 
     /**
@@ -49,7 +70,36 @@ final class LayoutConfig
      *     elements: array<string, array<string, mixed>>
      * }
      */
-    public function get(string $jenis): array
+    /**
+     * Layout untuk satu jenis sertifikat.
+     *
+     * Bila versi diminta, salinan beku di config/layout/arsip dipakai lebih dulu
+     * agar sertifikat lama tercetak dengan koordinat saat diterbitkan. Versi yang
+     * belum punya arsip (sertifikat sebelum arsip dibuat) memakai layout aktif.
+     */
+    public function get(string $jenis, ?string $versi = null): array
+    {
+        if ($versi !== null && $versi !== '') {
+            $arsip = $this->arsip[$jenis.'-'.$versi] ?? null;
+
+            if (is_array($arsip)) {
+                return $arsip;
+            }
+        }
+
+        return $this->aktif($jenis);
+    }
+
+    /**
+     * @return array{
+     *     versi: string,
+     *     background: string,
+     *     font: array{serif: string, serif_bold: string, fallback: string},
+     *     page: array{size: string, orientation: string},
+     *     elements: array<string, array<string, mixed>>
+     * }
+     */
+    private function aktif(string $jenis): array
     {
         if (! isset($this->layouts[$jenis])) {
             $tersedia = implode(', ', array_keys($this->layouts));
