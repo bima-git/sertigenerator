@@ -19,9 +19,13 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
+        'username',
+        'nama',
         'password',
+        'peran',
+        'aktif',
+        'gagal_login',
+        'terkunci_sampai',
     ];
 
     /**
@@ -42,8 +46,14 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'aktif' => 'boolean',
+            'terkunci_sampai' => 'datetime',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->peran === 'admin';
     }
 }
