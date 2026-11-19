@@ -115,7 +115,7 @@ Berikut detail teknis rekonsiliasi yang dilakukan untuk mencegah konflik dan men
 
 ## 4. Hasil Pengujian Otomatis Keseluruhan (*Automated Tests*)
 
-Pengujian dijalankan melalui `php artisan test`. Seluruh **53 pengujian berstatus 100% HIJAU (PASS) dengan 197 assertions**.
+Pengujian dijalankan melalui `php artisan test`. Seluruh **61 pengujian berstatus 100% HIJAU (PASS) dengan 241 assertions**.
 
 | Kelompok Pengujian | Berkas Pengujian | Jumlah Tes | Jumlah Assertions | Status |
 |---|---|:---:|:---:|:---:|
@@ -123,11 +123,12 @@ Pengujian dijalankan melalui `php artisan test`. Seluruh **53 pengujian berstatu
 | **Unit Test** | `tests/Unit/Services/RomanTest.php` | 5 | 18 | ✅ **PASS** |
 | **Feature Test** | `tests/Feature/Services/NumberAllocatorTest.php` | 11 | 25 | ✅ **PASS** |
 | **Feature Test** | `tests/Feature/Api/NumberSuggestTest.php` | 6 | 24 | ✅ **PASS** |
+| **Feature Test** | `tests/Feature/AuthTest.php` | 8 | 44 | ✅ **PASS** |
 | **Feature Test** | `tests/Feature/IssueCertificateTest.php` | 6 | 31 | ✅ **PASS** |
 | **Feature Test** | `tests/Feature/HistoryTest.php` | 6 | 24 | ✅ **PASS** |
 | **Feature Test** | `tests/Feature/ConcurrencyAndEdgeCasesTest.php` | 3 | 45 | ✅ **PASS** |
-| **Default Test** | `tests/Unit/ExampleTest.php` & `Feature/ExampleTest.php` | 2 | 2 | ✅ **PASS** |
-| **TOTAL KESELURUHAN** | **8 Berkas Tes Terpadu** | **53 Tests** | **197 Assertions** | 🚀 **100% PASS** |
+| **Default Test** | `tests/Unit/ExampleTest.php` & `Feature/ExampleTest.php` | 2 | 1 | ✅ **PASS** |
+| **TOTAL KESELURUHAN** | **9 Berkas Tes Terpadu** | **61 Tests** | **241 Assertions** | 🚀 **100% PASS** |
 
 ---
 
