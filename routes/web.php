@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\EventController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\IssueController;
@@ -56,18 +58,19 @@ Route::get('/riwayat/{id}/pdf', [HistoryController::class, 'download'])->name('h
 Route::post('/riwayat/{id}/batalkan', [HistoryController::class, 'cancel'])->name('history.cancel');
 
 Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function () {
-    Route::get('/kegiatan', fn (Request $r) => view('admin.events.index', [
-        'events' => Event::query()
-            ->when($r->query('jenis'), fn ($q, $j) => $q->where('jenis', $j))
-            ->when($r->query('q'), fn ($q, $s) => $q->where(fn ($w) => $w->where('kode', 'like', "%{$s}%")->orWhere('judul', 'like', "%{$s}%")))
-            ->orderByDesc('aktif')->orderByRaw('CAST(kode AS UNSIGNED)')->get(),
-    ]))->name('events.index');
-    Route::get('/kegiatan/baru', fn () => view('admin.events.form', ['event' => null]))->name('events.create');
-    Route::get('/kegiatan/{id}/ubah', fn (int $id) => view('admin.events.form', ['event' => Event::findOrFail($id)]))->name('events.edit');
+    Route::get('/kegiatan', [EventController::class, 'index'])->name('events.index');
+    Route::get('/kegiatan/baru', [EventController::class, 'create'])->name('events.create');
+    Route::post('/kegiatan/baru', [EventController::class, 'store'])->name('events.store');
+    Route::get('/kegiatan/{id}/ubah', [EventController::class, 'edit'])->whereNumber('id')->name('events.edit');
+    Route::post('/kegiatan/{id}/ubah', [EventController::class, 'update'])->whereNumber('id')->name('events.update');
+    Route::post('/kegiatan/{id}/aktif', [EventController::class, 'toggle'])->whereNumber('id')->name('events.toggle');
 
-    Route::get('/pengguna', fn () => view('admin.users.index', ['users' => User::orderBy('nama')->get()]))->name('users.index');
-    Route::get('/pengguna/baru', fn () => view('admin.users.form', ['user' => null]))->name('users.create');
-    Route::get('/pengguna/{id}/ubah', fn (int $id) => view('admin.users.form', ['user' => User::findOrFail($id)]))->name('users.edit');
+    Route::get('/pengguna', [UserController::class, 'index'])->name('users.index');
+    Route::get('/pengguna/baru', [UserController::class, 'create'])->name('users.create');
+    Route::post('/pengguna/baru', [UserController::class, 'store'])->name('users.store');
+    Route::get('/pengguna/{id}/ubah', [UserController::class, 'edit'])->whereNumber('id')->name('users.edit');
+    Route::post('/pengguna/{id}/ubah', [UserController::class, 'update'])->whereNumber('id')->name('users.update');
+    Route::post('/pengguna/{id}/reset-sandi', [UserController::class, 'reset'])->whereNumber('id')->name('users.reset');
 
     Route::get('/audit', fn (Request $r) => view('admin.audit', [
         'logs' => AuditLog::with('user')
