@@ -346,7 +346,9 @@
  * disembunyikan JS (penyebab kedip sebelumnya). Sidebar dan topbar tidak ikut
  * beranimasi saat pindah menu karena dijaga view transition. */
 [data-reveal] {
-    animation: rise 0.55s var(--ease-out) both;
+    /* backwards (bukan both): setelah selesai tidak menyisakan transform, jadi kartu
+       tidak membentuk lapisan baru yang menimpa dropdown atau daftar pilihan. */
+    animation: rise 0.55s var(--ease-out) backwards;
     animation-delay: calc(var(--i, 0) * 50ms);
 }
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
@@ -574,7 +576,8 @@ details > summary::-webkit-details-marker { display: none; }
 .vt-sidebar { view-transition-name: sidebar; }
 .vt-topbar { view-transition-name: topbar; }
 .vt-tabbar { view-transition-name: tabbar; }
-.vt-panelbar { view-transition-name: panelbar; }
+/* Bar profil membentuk lapisan sendiri (view-transition-name), jadi beri z-index agar menu akunnya di atas konten */
+.vt-panelbar { view-transition-name: panelbar; position: relative; z-index: 30; }
 
 /* Kurangi gerak: semua transisi dan animasi mati (Design System 4.3) */
 @media (prefers-reduced-motion: reduce) {

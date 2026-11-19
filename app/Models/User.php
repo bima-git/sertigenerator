@@ -55,16 +55,4 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->peran === 'admin';
-    }
-
-    /**
-     * Pengguna yang sedang masuk. Hanya di environment local, sebelum login (modul Akmal)
-     * selesai, jatuh ke admin pertama agar UI bisa dicoba. Di luar local tidak pernah ada fallback.
-     * ponytail: hapus fallback local setelah autentikasi aktif, cukup auth()->user().
-     */
-    public static function current(): ?self
-    {
-        return auth()->user()
-            ?? (app()->isLocal() ? static::query()->where('peran', 'admin')->where('aktif', true)->first() : null);
-    }
-}
+    }}

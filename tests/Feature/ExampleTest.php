@@ -14,7 +14,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        // Design System 3.2: beranda diarahkan ke form Terbitkan.
-        $response->assertRedirect('/terbitkan');
+        // PRD AU-05: tanpa sesi, semua halaman mengarah ke Masuk.
+        $response->assertRedirect('/masuk');
     }
 }

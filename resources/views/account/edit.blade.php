@@ -29,7 +29,7 @@
                     <input id="{{ $name }}" name="{{ $name }}" type="password" class="input pr-12" autocomplete="{{ $ac }}" required @error($name) aria-invalid="true" @enderror>
                     <button type="button" class="btn btn-icon absolute right-1 top-1/2 -translate-y-1/2" data-toggle-password="{{ $name }}" aria-label="Tampilkan kata sandi"><i class="ph ph-eye"></i></button>
                 </div>
-                @if ($name === 'password') <p class="hint">Minimal 8 karakter.</p> @endif
+                @if ($name === 'password') <p class="hint">Minimal 10 karakter.</p> @endif
                 @error($name) <p class="error"><i class="ph-fill ph-warning-circle"></i>{{ $message }}</p> @enderror
             </div>
         @endforeach

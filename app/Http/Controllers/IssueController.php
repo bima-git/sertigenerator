@@ -104,7 +104,7 @@ class IssueController extends Controller
     public function store(IssueRequest $request, IssueService $issueService): Response
     {
         // Tanpa akun cadangan buatan otomatis: penerbit harus pengguna nyata.
-        $user = User::current();
+        $user = auth()->user();
         abort_unless($user, 401);
 
         $result = $issueService->issue($request->validated(), $user);

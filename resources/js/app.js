@@ -173,6 +173,17 @@ function initMobileMenu() {
     });
 }
 
+/* Menu akun (<details>): tutup saat klik di luar atau tekan Esc. */
+function initDropdowns() {
+    const closeAll = (except) => $$('details[open]').forEach((d) => d !== except && d.removeAttribute('open'));
+    document.addEventListener('click', (e) => closeAll(e.target.closest('details')));
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        const open = document.querySelector('details[open]');
+        if (open) { open.removeAttribute('open'); open.querySelector('summary').focus(); }
+    });
+}
+
 /* Konfirmasi sebelum aksi berisiko: <form data-confirm="Teks">. */
 function initConfirm() {
     document.addEventListener('submit', (e) => {
@@ -184,6 +195,7 @@ function initConfirm() {
 initSpotlight();
 initSideHover();
 initFlash();
+initDropdowns();
 initConfirm();
 initLoadingForms();
 initModals();

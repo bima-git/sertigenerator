@@ -21,7 +21,7 @@ class HistoryController extends Controller
      */
     public function index(Request $request): View
     {
-        $me = User::current();
+        $me = auth()->user();
         abort_unless($me, 401);
         $mine = fn ($q) => $me->isAdmin() ? $q : $q->where('dibuat_oleh', $me->id);
 
@@ -72,7 +72,7 @@ class HistoryController extends Controller
     /** Operator hanya boleh mengakses sertifikat buatannya; Admin semua (Design System bagian 2). */
     private function authorizeOwner(Certificate $c): User
     {
-        $me = User::current();
+        $me = auth()->user();
         abort_unless($me, 401);
         abort_if(! $me->isAdmin() && $c->dibuat_oleh !== $me->id, 404);
 
@@ -116,7 +116,7 @@ class HistoryController extends Controller
         ]);
 
         /** @var User|null $admin */
-        $admin = User::current();
+        $admin = auth()->user();
 
         if (! $admin || ! $admin->isAdmin()) {
             abort(403, 'Hanya peran Admin yang berwenang membatalkan sertifikat.');

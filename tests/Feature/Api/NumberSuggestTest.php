@@ -21,6 +21,7 @@ class NumberSuggestTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
+        $this->actingAs($this->user); // semua rute selain /masuk wajib login (PRD AU-05)
 
         $this->seminarEvent = Event::create([
             'kode' => '35',

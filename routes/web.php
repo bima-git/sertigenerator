@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\IssueController;
 use App\Models\AuditLog;
@@ -13,25 +15,25 @@ use Illuminate\Support\Facades\Route;
 | Halaman (modul Giska) dan aksi penerbitan (modul Bima)
 |--------------------------------------------------------------------------
 | Nama rute mengikuti Design System bagian 3. Halaman admin masih closure
-| baca-saja; aksi simpan/ubah dan autentikasi menunggu modul Akmal.
+| baca-saja; aksi simpan/ubah kegiatan dan pengguna menunggu modul Akmal.
 */
 
-Route::view('/masuk', 'auth.login')->name('login');
+/* Tanpa sesi (Design System 3.1) */
+Route::middleware('guest')->group(function () {
+    Route::get('/masuk', [AuthController::class, 'create'])->name('login');
+    Route::post('/masuk', [AuthController::class, 'store'])->middleware('throttle:10,1')->name('login.attempt');
+});
 
-/*
- * Selain local/testing, semua rute wajib login dan /admin wajib peran admin.
- * ponytail: pengecualian local/testing hanya sampai POST /masuk (modul Akmal) ada;
- * setelah itu pakai middleware tanpa syarat dan tambahkan actingAs di test API.
- */
-$open = app()->environment('local', 'testing');
-
-Route::middleware($open ? [] : ['auth'])->group(function () use ($open) {
+/* Semua halaman lain wajib sesi aktif dan akun aktif (PRD AU-05) */
+Route::middleware(['auth', 'active'])->group(function () {
 Route::redirect('/', '/terbitkan')->name('home');
+Route::post('/keluar', [AuthController::class, 'destroy'])->name('logout');
 
 Route::get('/terbitkan', [IssueController::class, 'create'])->name('issue.form');
 Route::get('/riwayat', [HistoryController::class, 'index'])->name('history.index');
 Route::get('/riwayat/{id}', [HistoryController::class, 'show'])->whereNumber('id')->name('history.show');
-Route::view('/akun', 'account.edit')->name('account.edit');
+Route::get('/akun', [AccountController::class, 'edit'])->name('account.edit');
+Route::post('/akun/sandi', [AccountController::class, 'password'])->name('account.password');
 
 /* API form penerbitan (Design System 3.3) */
 Route::get('/api/kegiatan', [IssueController::class, 'events'])->name('api.events');
@@ -43,7 +45,7 @@ Route::post('/terbitkan', [IssueController::class, 'store'])->name('issue.store'
 Route::get('/riwayat/{id}/pdf', [HistoryController::class, 'download'])->name('history.pdf');
 Route::post('/riwayat/{id}/batalkan', [HistoryController::class, 'cancel'])->name('history.cancel');
 
-Route::prefix('admin')->name('admin.')->middleware($open ? [] : ['can:admin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function () {
     Route::get('/kegiatan', fn (Request $r) => view('admin.events.index', [
         'events' => Event::query()
             ->when($r->query('jenis'), fn ($q, $j) => $q->where('jenis', $j))
