@@ -83,6 +83,7 @@ class IssueService
             $dataCetak = $this->buildDataCetak($event, $data);
 
             // 4. Simpan baris sertifikat
+            $versiLayout = (string) config("layout.{$data['jenis']}.versi", '1.0');
             $certificate = Certificate::create([
                 'event_id'       => $event->id,
                 'jenis'          => $data['jenis'],
@@ -93,7 +94,7 @@ class IssueService
                 'nama_peserta'   => $data['nama_peserta'],
                 'tanggal_terbit' => $data['tanggal_terbit'],
                 'data_cetak'     => $dataCetak,
-                'versi_layout'   => '1.0',
+                'versi_layout'   => $versiLayout,
                 'status'         => 'terbit',
                 'dibuat_oleh'    => $userId,
             ]);
@@ -157,6 +158,7 @@ class IssueService
         $dataCetak = $this->buildDataCetak($event, $data);
 
         // Instance Certificate sementara in-memory
+        $versiLayout = (string) config("layout.{$data['jenis']}.versi", '1.0');
         $certificate = new Certificate([
             'event_id'       => $event->id,
             'jenis'          => $data['jenis'],
@@ -167,7 +169,7 @@ class IssueService
             'nama_peserta'   => $data['nama_peserta'],
             'tanggal_terbit' => $data['tanggal_terbit'],
             'data_cetak'     => $dataCetak,
-            'versi_layout'   => '1.0',
+            'versi_layout'   => $versiLayout,
             'status'         => 'terbit',
         ]);
         $certificate->setRelation('event', $event);
@@ -182,7 +184,7 @@ class IssueService
     }
 
     /**
-     * Menyusun array data cetak sesuai PRD Bagian 7.2.
+     * Menyusun array data cetak sesuai PRD Bagian 7.2 dan Design System 9.8.
      *
      * @param Event $event
      * @param array<string, mixed> $data
@@ -191,6 +193,16 @@ class IssueService
     private function buildDataCetak(Event $event, array $data): array
     {
         $kota = config('app.kota_terbit', 'Yogyakarta');
+        $date = Carbon::parse($data['tanggal_terbit'] ?? now(), 'Asia/Jakarta');
+
+        $bulanIndo = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+        $tanggalFormatted = $date->day . ' ' . ($bulanIndo[(int) $date->format('n')] ?? $date->format('F')) . ' ' . $date->year;
+        $tanggalKota = "{$kota}, {$tanggalFormatted}";
+        $pakaiQr = (bool) ($event->pakai_qr ?? true);
 
         if ($data['jenis'] === 'seminar') {
             return [
@@ -199,19 +211,26 @@ class IssueService
                 'kode'           => $event->kode,
                 'penerbit'       => $event->penerbit,
                 'kota'           => $kota,
+                'tanggal_kota'   => $tanggalKota,
+                'pakai_qr'       => $pakaiQr,
             ];
         }
+
+        $program = $data['program'] ?? $event->program_default ?? '';
 
         return [
             'judul_besar'     => 'SERTIFIKAT MAGANG',
             'bootcamp'        => $event->judul,
-            'program'         => $data['program'] ?? $event->program_default ?? '',
+            'program'         => $program,
+            'ujian'           => $program,
             'perusahaan'      => $data['perusahaan'] ?? '',
             'tanggal_mulai'   => $data['tanggal_mulai'] ?? '',
             'tanggal_selesai' => $data['tanggal_selesai'] ?? '',
             'kode'            => $event->kode,
             'penerbit'        => $event->penerbit,
             'kota'            => $kota,
+            'tanggal_kota'    => $tanggalKota,
+            'pakai_qr'        => $pakaiQr,
         ];
     }
 
