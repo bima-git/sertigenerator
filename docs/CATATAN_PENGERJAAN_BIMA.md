@@ -2,18 +2,54 @@
 
 **Nama / Peran:** Bima — Backend Logic, Penomoran (*Numbering Engine*) & Proses Penerbitan (*Issuance Orchestrator*)  
 **Branch Git:** `feature/bima-numbering`  
-**Status Tahap:** Langkah 1, Langkah 2, Langkah 3, & Langkah 4 Selesai — **100% Lulus Uji Otomatis (44 Tests, 128 Assertions)**  
+**Status Tahap:** Langkah 1 s.d. 4 Selesai + **Tersinkronisasi Penuh dengan Update Akmal (PR #1 Main)** — **100% Lulus Uji Otomatis (44 Tests, 128 Assertions)**  
 **Terakhir Diperbarui:** 19 November 2026
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-Dokumen ini mencatat seluruh detail implementasi, arsitektur kelas, skema data, endpoint API, dan hasil pengujian yang telah diselesaikan oleh Bima. Dokumen ini dirancang sebagai referensi teknis yang transparan dan dapat dibagikan kepada seluruh rekan tim (**Akmal, Ifant, dan Giska**) agar proses integrasi berjalan lancar tanpa tumpang tindih.
+Dokumen ini mencatat seluruh detail implementasi, arsitektur kelas, skema data, endpoint API, hasil pengujian, serta **rekonsiliasi sinkronisasi kode dengan rekan tim (Akmal)**. Dokumen ini dirancang sebagai referensi teknis yang transparan dan dapat dibagikan kepada seluruh rekan tim (**Akmal, Ifant, dan Giska**) agar proses integrasi berjalan lancar tanpa tumpang tindih.
 
 ---
 
-## 2. Rincian Modul yang Telah Selesai Dibangun
+## 2. Catatan Khusus: Sinkronisasi & Rekonsiliasi Kode dengan Akmal (Fase 1 / Database Foundation)
+
+Pada saat Akmal menyelesaikan pengerjaan modul autentikasi dan database (Fase 1) serta melakukan *merge* ke branch `main`, Bima melakukan sinkronisasi (*pull & merge*) dari `origin/main` ke branch `feature/bima-numbering`. 
+
+Berikut detail teknis rekonsiliasi yang dilakukan untuk mencegah konflik dan menjamin integritas sistem:
+
+### A. Resolusi Konflik Model `Event` ([`app/Models/Event.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/Event.php))
+* **Situasi:** Kedua pengembang menambahkan berkas model `Event.php`.
+* **Solusi Rekonsiliasi:** 
+  * Mengadopsi struktur modern Laravel 12 dari Akmal: penggunaan PHPDoc `/** @use HasFactory<EventFactory> */` dan method `casts(): array`.
+  * Mempertahankan relasi dan query scope yang dibutuhkan oleh logika penomoran Bima: `certificates(): HasMany`, `scopeAktif()`, dan `scopeJenis()`.
+  * Kedua kebutuhan pengembang disatukan secara harmonis tanpa membuang fungsionalitas apa pun.
+
+### B. Urutan Timestamp Berkas Migrasi Database (*Chronological Ordering*)
+* **Masalah Kritis yang Dicegah:**
+  * Akmal membuat migrasi resmi event dengan nama: `2026_11_19_083350_create_events_table.php`.
+  * Sebelumnya, migrasi sertifikat Bima bernama `2026_11_19_000002_create_certificates_table.php`.
+  * Di Laravel, file migrasi dijalankan berurutan berdasarkan nama file (*alphabetical/timestamp*). Jika tidak disesuaikan, tabel `certificates` akan dieksekusi **sebelum** tabel `events` terbentuk, yang menyebabkan *fatal error* pada foreign key constraint `event_id -> events(id)`.
+* **Solusi Rekonsiliasi:**
+  1. Menghapus migrasi sementara event milik Bima (`2026_11_19_000001_create_events_table.php`) dan memakai migrasi resmi buatan Akmal (`083350`).
+  2. Menyesuaikan nama timestamp migrasi Bima agar berjalan setelah tabel event Akmal:
+     * `2026_11_19_083400_create_certificates_table.php` (Tabel Sertifikat)
+     * `2026_11_19_083410_create_audit_logs_table.php` (Tabel Audit Log)
+
+### C. Integrasi Kredensial Seeder Admin (`AdminUserSeeder`)
+* Akmal menambahkan seeder resmi `AdminUserSeeder` yang memvalidasi keberadaan `ADMIN_PASSWORD` di `.env`.
+* Variabel lingkungan telah ditambahkan ke `.env`:
+  ```dotenv
+  ADMIN_USERNAME=admin
+  ADMIN_NAMA="Administrator XCODE"
+  ADMIN_PASSWORD=AdminXCode2026!
+  ```
+* Perintah `php artisan migrate:fresh --seed` telah dieksekusi dan berjalan **100% sukses** (tabel bersih, seeder admin terisi, dan event seeder siap).
+
+---
+
+## 3. Rincian Modul yang Telah Selesai Dibangun
 
 ### A. Helper Angka Romawi (`App\Services\Roman`) — *Langkah 1*
 * **Lokasi Berkas:** [`app/Services/Roman.php`](file:///D:/MAGANG_2026/sertigenerator/app/Services/Roman.php)
@@ -42,17 +78,17 @@ Dokumen ini mencatat seluruh detail implementasi, arsitektur kelas, skema data, 
 ---
 
 ### C. Skema Basis Data & Model Eloquent — *Langkah 2*
-Sesuai **PRD Bagian 7.1**, dibuat tabel dan model data pendukung penomoran:
+Sesuai **PRD Bagian 7.1** dan hasil sinkronisasi dengan Akmal:
 1. **Tabel & Model `Event`:**
-   * Berkas: [`database/migrations/2026_11_19_000001_create_events_table.php`](file:///D:/MAGANG_2026/sertigenerator/database/migrations/2026_11_19_000001_create_events_table.php) & [`app/Models/Event.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/Event.php)
+   * Berkas: [`database/migrations/2026_11_19_083350_create_events_table.php`](file:///D:/MAGANG_2026/sertigenerator/database/migrations/2026_11_19_083350_create_events_table.php) & [`app/Models/Event.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/Event.php)
    * Menyimpan master kegiatan: `kode`, `judul`, `jenis`, `penerbit`, `bernomor`, `pakai_qr`, `program_default`, `aktif`.
 2. **Tabel & Model `Certificate`:**
-   * Berkas: [`database/migrations/2026_11_19_000002_create_certificates_table.php`](file:///D:/MAGANG_2026/sertigenerator/database/migrations/2026_11_19_000002_create_certificates_table.php) & [`app/Models/Certificate.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/Certificate.php)
+   * Berkas: [`database/migrations/2026_11_19_083400_create_certificates_table.php`](file:///D:/MAGANG_2026/sertigenerator/database/migrations/2026_11_19_083400_create_certificates_table.php) & [`app/Models/Certificate.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/Certificate.php)
    * Dilengkapi constraint integritas ganda:
      * `UNIQUE KEY (nomor_lengkap)`
      * `UNIQUE KEY uq_event_seri_urut_tahun (event_id, seri, urut, tahun)`
 3. **Tabel & Model `AuditLog`:**
-   * Berkas: [`database/migrations/2026_11_19_000003_create_audit_logs_table.php`](file:///D:/MAGANG_2026/sertigenerator/database/migrations/2026_11_19_000003_create_audit_logs_table.php) & [`app/Models/AuditLog.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/AuditLog.php)
+   * Berkas: [`database/migrations/2026_11_19_083410_create_audit_logs_table.php`](file:///D:/MAGANG_2026/sertigenerator/database/migrations/2026_11_19_083410_create_audit_logs_table.php) & [`app/Models/AuditLog.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/AuditLog.php)
    * Mencatat seluruh aksi penting: pelaku (`user_id`), jenis aksi (`aksi`), `target_id`, `detail` JSON, IP, dan timestamp.
 
 ---
@@ -97,7 +133,7 @@ Sesuai **PRD Bagian 7.1**, dibuat tabel dan model data pendukung penomoran:
      * Membangun salinan data cetak JSON (`data_cetak`) yang disimpan permanen di tabel sertifikat.
      * **Kaidah Atomik:** Render PDF dilakukan di dalam transaksi **sebelum commit**. Jika terjadi kegagalan render (misal out-of-memory TCPDF), transaksi otomatis di-*rollback*, data sertifikat tidak tersimpan, dan nomor urut tetap bebas.
      * Mencatat jejak ke tabel `audit_logs`.
-     * Menghasilkan nama berkas aman sesuai PRD PD-10: `Sertifikat_{Jenis}_{NamaSafe}.pdf` (misal: `Mu'ammal Hamidy` $\rightarrow$ `Muammal_Hamidy`).
+     * Menghasilkan nama berkas aman sesuai PRD PD-10: `Sertifikat_{Jenis}_{NamaSafe}.pdf` (*Mu'ammal Hamidy* $\rightarrow$ `Muammal_Hamidy`).
   2. **`IssueService::preview(array $data): array`:**
      * Menghasilkan contoh PDF ber-watermark `PRATINJAU` secara inline.
      * Tidak menjalankan transaksi, tidak memotong kuota nomor urut, dan tidak menyimpan data ke database.
@@ -107,7 +143,7 @@ Sesuai **PRD Bagian 7.1**, dibuat tabel dan model data pendukung penomoran:
 
 ---
 
-## 3. Hasil Pengujian Otomatis (*Automated Tests*)
+## 4. Hasil Pengujian Otomatis Pasca-Merge
 
 Pengujian dijalankan melalui `php artisan test`. Seluruh **44 pengujian berstatus 100% HIJAU (PASS) dengan 128 assertions**.
 
@@ -130,16 +166,6 @@ Pengujian dijalankan melalui `php artisan test`. Seluruh **44 pengujian berstatu
 
 ---
 
-## 4. Panduan Titik Integrasi untuk Rekan Tim
-
-| Rekan Tim | Titik Kolaborasi dengan Bima | Kontrak / Panduan Teknis |
-|---|---|---|
-| **Giska** (Frontend) | Form Penerbitan Dinamis | • Panggil `GET /api/nomor` untuk saran nomor & preview string.<br>• Form `POST /terbitkan` mengirim data ke `issue.store` untuk langsung mengunduh PDF.<br>• Tombol Pratinjau mengirim data ke `POST /pratinjau` (`issue.preview`) untuk membuka PDF di tab baru. |
-| **Ifant** (PDF Generator) | Engine Rendering PDF | Kelas `App\Services\PdfRenderer` siap menerima integrasi layout TCPDF resmi dari Ifant. Method `render(Certificate $cert, string $mode)` menerima model sertifikat dan mode (`terbit`, `pratinjau`, `dibatalkan`). |
-| **Akmal** (Database & Admin) | Data Transaksi & Audit Log | Seluruh penerbitan tercatat di tabel `certificates` dan `audit_logs` dengan format data cetak JSON yang lengkap. |
-
----
-
 ## 5. Rencana Langkah Berikutnya (Langkah 5)
 
 Tahap berikutnya yang akan dikerjakan oleh Bima:
@@ -148,7 +174,7 @@ Tahap berikutnya yang akan dikerjakan oleh Bima:
     * Membaca salinan `data_cetak` JSON dari baris sertifikat tersimpan.
     * Me-render ulang PDF menggunakan versi layout yang tercatat pada saat terbit (identik visual 100%).
     * Jika sertifikat berstatus `dibatalkan`, PDF otomatis memunculkan tanda air `DIBATALKAN`.
-  * Membangun aksi pembatalan (`HistoryController@cancel`):
+  * Membangun aksi pembatalan resmi (`HistoryController@cancel`):
     * Rute: `POST /riwayat/{id}/batalkan` (Khusus Admin).
     * Validasi alasan pembatalan (wajib diisi).
     * Menandai status menjadi `dibatalkan`, mencatat ID admin pembatal, dan waktu pembatalan.
