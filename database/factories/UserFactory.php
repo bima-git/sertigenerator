@@ -25,21 +25,52 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            'username' => Str::limit(fake()->unique()->userName(), 50, ''),
+            'nama' => Str::limit(fake()->name(), 100, ''),
             'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'peran' => 'operator',
+            'aktif' => true,
         ];
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Indicate that the user is an admin.
      */
-    public function unverified(): static
+    public function admin(): static
     {
         return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+            'peran' => 'admin',
+        ]);
+    }
+
+    /**
+     * Indicate that the user is an operator.
+     */
+    public function operator(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'peran' => 'operator',
+        ]);
+    }
+
+    /**
+     * Indicate that the user account is inactive.
+     */
+    public function nonaktif(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'aktif' => false,
+        ]);
+    }
+
+    /**
+     * Indicate that the user account is locked until a given time.
+     */
+    public function terkunci(?string $sampai = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'gagal_login' => 5,
+            'terkunci_sampai' => $sampai ?? now()->addMinutes(10),
         ]);
     }
 }

@@ -1,9 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Exceptions;
 
-use RuntimeException;
+use Exception;
 
-final class RenderException extends RuntimeException {}
+class RenderException extends Exception
+{
+}

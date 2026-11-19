@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\CertificateMode;
+use App\Pdf\CertificateRenderer;
 use App\Services\DateId;
-use App\Services\PdfRenderer;
 use App\Services\SampleCertificateData;
 use DateTimeImmutable;
 use Illuminate\Http\Request;
@@ -49,7 +49,7 @@ final class CertificatePreviewController extends Controller
 
     public function pdf(
         Request $request,
-        PdfRenderer $renderer,
+        CertificateRenderer $renderer,
         SampleCertificateData $samples,
         DateId $dates,
     ): Response {

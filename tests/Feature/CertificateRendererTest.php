@@ -6,14 +6,14 @@ namespace Tests\Feature;
 
 use App\Enums\CertificateMode;
 use App\Exceptions\RenderException;
+use App\Pdf\CertificateRenderer;
 use App\Services\LayoutConfig;
-use App\Services\PdfRenderer;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
-final class PdfRendererTest extends TestCase
+final class CertificateRendererTest extends TestCase
 {
-    private PdfRenderer $renderer;
+    private CertificateRenderer $renderer;
 
     protected function setUp(): void
     {
@@ -31,7 +31,7 @@ final class PdfRendererTest extends TestCase
         }
 
         $this->app->instance(LayoutConfig::class, new LayoutConfig($layouts));
-        $this->renderer = $this->app->make(PdfRenderer::class);
+        $this->renderer = $this->app->make(CertificateRenderer::class);
     }
 
     public function test_renders_seminar_text_at_configured_fields(): void

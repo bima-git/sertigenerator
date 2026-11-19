@@ -6,8 +6,8 @@ namespace App\Console\Commands;
 
 use App\Enums\CertificateMode;
 use App\Exceptions\RenderException;
+use App\Pdf\CertificateRenderer;
 use App\Services\DateId;
-use App\Services\PdfRenderer;
 use App\Services\SampleCertificateData;
 use DateTimeImmutable;
 use Illuminate\Console\Command;
@@ -23,7 +23,7 @@ final class MakeSampleCertificates extends Command
 
     protected $description = 'Membuat PDF sampel untuk kalibrasi layout sertifikat';
 
-    public function handle(PdfRenderer $renderer, DateId $dates, SampleCertificateData $samples): int
+    public function handle(CertificateRenderer $renderer, DateId $dates, SampleCertificateData $samples): int
     {
         try {
             $mode = CertificateMode::fromInput((string) $this->option('mode'));
