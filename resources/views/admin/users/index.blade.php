@@ -17,7 +17,7 @@
 
 <section class="card overflow-hidden" data-reveal style="--i:1">
     <table class="table">
-        <thead><tr><th>Nama</th><th>Peran</th><th>Terakhir masuk</th><th>Status</th><th><span class="sr-only">Aksi</span></th></tr></thead>
+        <thead><tr><th>Nama</th><th>Peran</th><th>Dibuat</th><th>Status</th><th><span class="sr-only">Aksi</span></th></tr></thead>
         <tbody>
             @foreach ($users as $u)
                 <tr class="{{ $u['aktif'] ? '' : 'opacity-60' }}">
@@ -28,7 +28,7 @@
                         </span>
                     </td>
                     <td data-label="Peran"><span class="badge {{ $u['peran'] === 'admin' ? 'badge-brand' : 'badge-neutral' }}">{{ $u['peran'] === 'admin' ? 'Admin' : 'Operator' }}</span></td>
-                    <td data-label="Terakhir masuk" class="whitespace-nowrap">{{ $u['terakhir'] }}</td>
+                    <td data-label="Dibuat" class="whitespace-nowrap">{{ $u->created_at?->translatedFormat('j M Y') }}</td>
                     <td data-label="Status"><span class="badge {{ $u['aktif'] ? 'badge-success' : 'badge-neutral' }}">{{ $u['aktif'] ? 'Aktif' : 'Nonaktif' }}</span></td>
                     <td data-label="">
                         <div class="flex justify-end gap-1">

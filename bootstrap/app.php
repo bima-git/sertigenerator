@@ -14,5 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Nomor ganda adalah kesalahan isian, bukan galat server: tampilkan pesannya ke operator.
+        $exceptions->render(fn (\App\Exceptions\DuplicateNumberException $e, $request) => $request->expectsJson()
+            ? response()->json(['message' => $e->getMessage()], 409)
+            : back()->withInput()->with('error', $e->getMessage()));
     })->create();

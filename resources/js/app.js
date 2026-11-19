@@ -4,41 +4,7 @@ import { initIssueForm } from './issue-form';
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-/*
- * Muncul saat di-scroll. Yang sudah terlihat saat halaman dibuka dibiarkan apa adanya
- * (tanpa animasi) supaya refresh dan pindah menu tidak berkedip. Hanya elemen di bawah
- * layar yang disembunyikan lalu dimunculkan ketika di-scroll ke sana.
- */
-function initReveal() {
-    if (reduce || !('IntersectionObserver' in window)) return;
-    const fold = window.innerHeight;
-    const pending = $$('[data-reveal], [data-chart]').filter((el) => el.getBoundingClientRect().top > fold);
-    if (!pending.length) return;
-    const io = new IntersectionObserver((entries) => {
-        entries.forEach((e) => {
-            if (!e.isIntersecting) return;
-            e.target.classList.add('in-view');
-            $$('[data-count]', e.target).forEach(countUp);
-            io.unobserve(e.target);
-        });
-    }, { threshold: 0.15 });
-    pending.forEach((el) => { el.classList.add('reveal-pending'); io.observe(el); });
-}
-
-/* Angka KPI naik dari 0, memberi tahu bahwa data baru dimuat. */
-function countUp(el) {
-    if (el.dataset.counted) return;
-    el.dataset.counted = '1';
-    const target = Number(el.dataset.count);
-    const start = performance.now();
-    const dur = 900;
-    const tick = (now) => {
-        const p = Math.min((now - start) / dur, 1);
-        el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString('id-ID');
-        if (p < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-}
+// Animasi masuk dan angka KPI ditangani CSS ([data-reveal], .count) agar tidak berkedip.
 
 /* Sorot mengikuti kursor pada tile KPI. */
 function initSpotlight() {
@@ -215,7 +181,6 @@ function initConfirm() {
     }, true);
 }
 
-initReveal();
 initSpotlight();
 initSideHover();
 initFlash();

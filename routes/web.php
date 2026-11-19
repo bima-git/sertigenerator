@@ -1,68 +1,57 @@
 <?php
 
-use App\Support\UiDummy;
+use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\IssueController;
+use App\Models\AuditLog;
+use App\Models\Event;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Halaman antarmuka (modul Giska)
+| Halaman (modul Giska) dan aksi penerbitan (modul Bima)
 |--------------------------------------------------------------------------
-| Nama rute mengikuti Design System bagian 3. Closure di bawah memakai
-| UiDummy sampai controller Akmal/Bima digabung; ganti closure dengan
-| controller, view tidak perlu diubah. Rute POST (masuk, terbitkan,
-| pratinjau, batalkan, simpan) milik modul backend.
+| Nama rute mengikuti Design System bagian 3. Halaman admin masih closure
+| baca-saja; aksi simpan/ubah dan autentikasi menunggu modul Akmal.
 */
 
 Route::view('/masuk', 'auth.login')->name('login');
-
 Route::redirect('/', '/terbitkan')->name('home');
 
-Route::get('/terbitkan', fn () => view('issue.create', [
-    'events' => UiDummy::events(),
-]))->name('issue.form');
-
-Route::get('/riwayat', function (Request $request) {
-    $q = mb_strtolower(trim((string) $request->query('q')));
-    $jenis = (array) $request->query('jenis', []);
-    $status = (array) $request->query('status', []);
-
-    $all = UiDummy::certificates();
-    $rows = array_values(array_filter($all, fn ($c) => ($q === '' || str_contains(mb_strtolower($c['nama_peserta'].' '.$c['nomor_lengkap']), $q))
-        && (! $jenis || in_array($c['jenis'], $jenis, true))
-        && (! $status || in_array($c['status'], $status, true))));
-
-    return view('history.index', [
-        'certificates' => $rows,
-        'stats' => [
-            'total' => count($all),
-            'seminar' => count(array_filter($all, fn ($c) => $c['jenis'] === 'seminar')),
-            'bootcamp' => count(array_filter($all, fn ($c) => $c['jenis'] === 'bootcamp')),
-            'batal' => count(array_filter($all, fn ($c) => $c['status'] === 'dibatalkan')),
-        ],
-        'monthly' => UiDummy::monthly(),
-    ]);
-})->name('history.index');
-
-Route::get('/riwayat/{id}', fn (int $id) => view('history.show', [
-    'c' => UiDummy::certificate($id) ?? abort(404),
-]))->whereNumber('id')->name('history.show');
-
+Route::get('/terbitkan', [IssueController::class, 'create'])->name('issue.form');
+Route::get('/riwayat', [HistoryController::class, 'index'])->name('history.index');
+Route::get('/riwayat/{id}', [HistoryController::class, 'show'])->whereNumber('id')->name('history.show');
 Route::view('/akun', 'account.edit')->name('account.edit');
 
+/* API form penerbitan (Design System 3.3) */
+Route::get('/api/kegiatan', [IssueController::class, 'events'])->name('api.events');
+Route::get('/api/nomor', [IssueController::class, 'suggest'])->name('api.number');
+
+/* Aksi penerbitan, pratinjau, unduh ulang, pembatalan */
+Route::post('/pratinjau', [IssueController::class, 'preview'])->name('issue.preview');
+Route::post('/terbitkan', [IssueController::class, 'store'])->name('issue.store');
+Route::get('/riwayat/{id}/pdf', [HistoryController::class, 'download'])->name('history.pdf');
+Route::post('/riwayat/{id}/batalkan', [HistoryController::class, 'cancel'])->name('history.cancel');
+
 Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/kegiatan', fn () => view('admin.events.index', ['events' => UiDummy::events()]))->name('events.index');
+    Route::get('/kegiatan', fn (Request $r) => view('admin.events.index', [
+        'events' => Event::query()
+            ->when($r->query('jenis'), fn ($q, $j) => $q->where('jenis', $j))
+            ->when($r->query('q'), fn ($q, $s) => $q->where(fn ($w) => $w->where('kode', 'like', "%{$s}%")->orWhere('judul', 'like', "%{$s}%")))
+            ->orderByDesc('aktif')->orderByRaw('CAST(kode AS UNSIGNED)')->get(),
+    ]))->name('events.index');
     Route::get('/kegiatan/baru', fn () => view('admin.events.form', ['event' => null]))->name('events.create');
-    Route::get('/kegiatan/{id}/ubah', fn (int $id) => view('admin.events.form', [
-        'event' => collect(UiDummy::events())->firstWhere('id', $id) ?? abort(404),
-    ]))->name('events.edit');
+    Route::get('/kegiatan/{id}/ubah', fn (int $id) => view('admin.events.form', ['event' => Event::findOrFail($id)]))->name('events.edit');
 
-    Route::get('/pengguna', fn () => view('admin.users.index', ['users' => UiDummy::users()]))->name('users.index');
+    Route::get('/pengguna', fn () => view('admin.users.index', ['users' => User::orderBy('nama')->get()]))->name('users.index');
     Route::get('/pengguna/baru', fn () => view('admin.users.form', ['user' => null]))->name('users.create');
-    Route::get('/pengguna/{id}/ubah', fn (int $id) => view('admin.users.form', [
-        'user' => collect(UiDummy::users())->firstWhere('id', $id) ?? abort(404),
-    ]))->name('users.edit');
+    Route::get('/pengguna/{id}/ubah', fn (int $id) => view('admin.users.form', ['user' => User::findOrFail($id)]))->name('users.edit');
 
-    Route::get('/audit', fn () => view('admin.audit', ['logs' => UiDummy::audit()]))->name('audit');
+    Route::get('/audit', fn (Request $r) => view('admin.audit', [
+        'logs' => AuditLog::with('user')
+            ->when($r->query('aksi'), fn ($q, $a) => $q->whereIn('aksi', (array) $a))
+            ->latest('created_at')->paginate(25)->withQueryString(),
+    ]))->name('audit');
     Route::view('/uji-layout', 'admin.layout-test')->name('layout.test');
 });

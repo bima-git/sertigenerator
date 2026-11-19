@@ -3,7 +3,6 @@
 
 @section('content')
 @php
-    $me = auth()->user() ?? \App\Support\UiDummy::user();
     $fields = [
         'password_lama' => ['Kata sandi saat ini', 'current-password'],
         'password' => ['Kata sandi baru', 'new-password'],

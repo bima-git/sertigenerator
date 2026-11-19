@@ -14,6 +14,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        // Design System 3.2: beranda diarahkan ke form Terbitkan.
+        $response->assertRedirect('/terbitkan');
     }
 }

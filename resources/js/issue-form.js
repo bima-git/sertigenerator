@@ -6,7 +6,9 @@
  * Bila endpoint belum tersedia, nomor dihitung lokal hanya untuk pratinjau.
  * Server tetap memvalidasi ulang semuanya.
  */
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+import { setLoading, toast } from './app';
+
+const ROMAN =['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 const pad3 = (n) => String(n).padStart(3, '0');
 
 export function initIssueForm() {
@@ -250,7 +252,7 @@ export function initIssueForm() {
 
         // Nama berkas: Sertifikat_Seminar_Muammal_Hamidy.pdf
         const slug = f.nama.value.trim().replace(/[^\p{L}\s-]/gu, '').replace(/\s+/g, '_');
-        ui.file.textContent = `Sertifikat_${jenis === 'seminar' ? 'Seminar' : 'Magang'}_${slug || 'Nama_Peserta'}.pdf`;
+        ui.file.textContent = `Sertifikat_${jenis === 'seminar' ? 'Seminar' : 'Bootcamp'}_${slug || 'Nama_Peserta'}.pdf`;
 
         const title = jenis === 'seminar' ? f.judul.value : [event?.judul, f.program.value].filter(Boolean).join(' / ');
         ui.title.textContent = title || 'Pilih kegiatan untuk melihat judul.';
@@ -302,6 +304,83 @@ export function initIssueForm() {
         const blocked = missing.length > 0 || badDates;
         ui.submit.disabled = blocked;
         ui.reason.textContent = missing.length ? `Lengkapi ${missing.join(', ')}.` : (badDates ? 'Perbaiki tanggal selesai.' : '');
+    }
+
+    /* ---------- Kirim: Terbitkan & Unduh / Pratinjau ---------- */
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.submitter;
+        const isPreview = btn?.formAction?.endsWith('/pratinjau');
+        // Jendela dibuka sinkron agar tidak diblokir popup blocker, lalu diisi PDF.
+        const win = isPreview ? window.open('', '_blank') : null;
+        clearErrors();
+        setLoading(btn, true);
+        try {
+            const res = await window.axios.post(isPreview ? btn.formAction : form.action, new FormData(form), {
+                responseType: 'blob',
+                headers: { Accept: 'application/json' },
+            });
+            const url = URL.createObjectURL(res.data);
+            if (isPreview) {
+                win.location = url;
+            } else {
+                const a = Object.assign(document.createElement('a'), { href: url, download: filenameFrom(res) });
+                a.click();
+                const nomor = res.headers['x-certificate-number'];
+                toast(`Sertifikat atas nama ${f.nama.value.trim()} diterbitkan${nomor ? ` dengan nomor ${nomor}` : ''}. Unduhan dimulai.`, 'success');
+                // Siap untuk peserta berikutnya: kegiatan, seri, tanggal tetap.
+                f.nama.value = '';
+                urutTouched = false;
+                requestSuggestion();
+                render();
+                f.nama.focus();
+            }
+            setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        } catch (ex) {
+            win?.close();
+            await showError(ex);
+        } finally {
+            setLoading(btn, false);
+            render();
+        }
+    });
+
+    function filenameFrom(res) {
+        const m = /filename="?([^"]+)"?/.exec(res.headers['content-disposition'] ?? '');
+        return m ? m[1] : ui.file.textContent;
+    }
+
+    async function showError(ex) {
+        let body = {};
+        try { body = JSON.parse(await ex.response?.data?.text()); } catch { /* bukan JSON */ }
+        if (ex.response?.status === 422 && body.errors) {
+            Object.entries(body.errors).forEach(([name, msgs]) => {
+                const input = form.querySelector(`[name="${name}"]`);
+                const fieldEl = input?.closest('.field') ?? (name === 'event_id' ? f.search.closest('.field') : null);
+                if (!fieldEl) return;
+                (input?.type === 'hidden' ? f.search : input)?.setAttribute('aria-invalid', 'true');
+                const p = document.createElement('p');
+                p.className = 'error';
+                p.dataset.clientError = '';
+                p.innerHTML = '<i class="ph-fill ph-warning-circle"></i><span></span>';
+                p.querySelector('span').textContent = msgs[0];
+                fieldEl.append(p);
+            });
+            form.querySelector('[aria-invalid="true"]')?.focus();
+            toast('Periksa kembali isian yang ditandai.', 'warning');
+        } else if (ex.response?.status === 419) {
+            toast('Sesi form berakhir. Muat ulang halaman lalu coba lagi.', 'danger');
+        } else {
+            toast(body.message && ex.response?.status < 500
+                ? body.message
+                : 'Sertifikat belum bisa dibuat dan nomor tidak terpakai. Coba lagi. Bila berulang, hubungi admin.', 'danger');
+            requestSuggestion();
+        }
+    }
+
+    function clearErrors() {
+        form.querySelectorAll('[data-client-error]').forEach((el) => el.remove());
+        form.querySelectorAll('[aria-invalid="true"]').forEach((el) => el.removeAttribute('aria-invalid'));
     }
 
     applyJenis();

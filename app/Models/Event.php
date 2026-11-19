@@ -43,13 +43,27 @@ class Event extends Model
         ];
     }
 
+    /**
+     * Relasi ke seluruh sertifikat yang diterbitkan untuk kegiatan ini.
+     */
+    public function certificates(): HasMany
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+    /**
+     * Scope untuk kegiatan yang aktif.
+     */
     public function scopeAktif(Builder $query): Builder
     {
         return $query->where('aktif', true);
     }
 
-    public function certificates(): HasMany
+    /**
+     * Scope untuk menyaring jenis kegiatan (seminar atau bootcamp).
+     */
+    public function scopeJenis(Builder $query, string $jenis): Builder
     {
-        return $this->hasMany(Certificate::class);
+        return $query->where('jenis', $jenis);
     }
 }

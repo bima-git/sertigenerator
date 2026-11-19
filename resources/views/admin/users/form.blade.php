@@ -3,7 +3,6 @@
 
 @section('content')
 @php
-    $me = auth()->user() ?? \App\Support\UiDummy::user();
     $v = fn ($k, $d = null) => old($k, $user[$k] ?? $d);
     $self = $user && $user['id'] === $me->id;
 @endphp
