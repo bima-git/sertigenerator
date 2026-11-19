@@ -1,59 +1,79 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\IssueController;
+use App\Models\AuditLog;
+use App\Models\Event;
+use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Autentikasi Pengguna (Sesuai PRD Section 4.1 & Design System 3.1 - 3.2)
+| Autentikasi (AuthController modul Bima, PRD 4.1, Design System 3.1 - 3.2)
 |--------------------------------------------------------------------------
 */
-Route::get('/masuk', [AuthController::class, 'create'])->name('login');
-Route::post('/masuk', [AuthController::class, 'store'])->name('login.attempt');
-Route::post('/keluar', [AuthController::class, 'destroy'])->name('logout');
-
-// REST API Login Endpoints (Tanpa CSRF via api/* exception)
-Route::post('/api/login', [AuthController::class, 'store'])->name('api.login');
+// REST API login. Tetap dijaga CSRF: klien kirim header X-XSRF-TOKEN dari cookie XSRF-TOKEN. /api/me menjawab 401 sendiri bila belum masuk.
+Route::post('/api/login', [AuthController::class, 'store'])->middleware('throttle:10,1')->name('api.login');
 Route::post('/api/logout', [AuthController::class, 'destroy'])->name('api.logout');
 Route::get('/api/me', [AuthController::class, 'me'])->name('api.me');
 
 /*
 |--------------------------------------------------------------------------
-| Halaman Utama: Pengalihan sesuai status sesi (Design System 3.2 & 3.5)
+| Halaman (modul Giska) dan aksi penerbitan (modul Bima)
 |--------------------------------------------------------------------------
+| Nama rute mengikuti Design System bagian 3. Halaman admin masih closure
+| baca-saja; aksi simpan/ubah kegiatan dan pengguna menunggu modul Akmal.
 */
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('issue.store');
-    }
-    return redirect()->route('login');
-})->name('home');
 
-/*
-|--------------------------------------------------------------------------
-| API Endpoints untuk Form Penerbitan (Modul Bima & Giska)
-| Sesuai Design System Bagian 3.3
-|--------------------------------------------------------------------------
-*/
+/* Tanpa sesi (Design System 3.1) */
+Route::middleware('guest')->group(function () {
+    Route::get('/masuk', [AuthController::class, 'create'])->name('login');
+    Route::post('/masuk', [AuthController::class, 'store'])->middleware('throttle:10,1')->name('login.attempt');
+});
+
+/* Semua halaman lain wajib sesi aktif dan akun aktif (PRD AU-05) */
+Route::middleware(['auth', 'active'])->group(function () {
+Route::redirect('/', '/terbitkan')->name('home');
+Route::post('/keluar', [AuthController::class, 'destroy'])->name('logout');
+
+Route::get('/terbitkan', [IssueController::class, 'create'])->name('issue.form');
+Route::get('/riwayat', [HistoryController::class, 'index'])->name('history.index');
+Route::get('/riwayat/{id}', [HistoryController::class, 'show'])->whereNumber('id')->name('history.show');
+Route::get('/akun', [AccountController::class, 'edit'])->name('account.edit');
+Route::post('/akun/sandi', [AccountController::class, 'password'])->name('account.password');
+
+/* API form penerbitan (Design System 3.3) */
 Route::get('/api/kegiatan', [IssueController::class, 'events'])->name('api.events');
 Route::get('/api/nomor', [IssueController::class, 'suggest'])->name('api.number');
 
-/*
-|--------------------------------------------------------------------------
-| Aksi Penerbitan dan Pratinjau Sertifikat (Modul Bima)
-| Sesuai PRD Bagian 4.3 dan Design System Bagian 3.3
-|--------------------------------------------------------------------------
-*/
+/* Aksi penerbitan, pratinjau, unduh ulang, pembatalan */
 Route::post('/pratinjau', [IssueController::class, 'preview'])->name('issue.preview');
 Route::post('/terbitkan', [IssueController::class, 'store'])->name('issue.store');
-
-/*
-|--------------------------------------------------------------------------
-| Aksi Riwayat, Unduh Ulang & Pembatalan Sertifikat (Modul Bima & Akmal)
-| Sesuai PRD Bagian 4.6 dan Design System Bagian 3.3 & 3.4
-|--------------------------------------------------------------------------
-*/
 Route::get('/riwayat/{id}/pdf', [HistoryController::class, 'download'])->name('history.pdf');
 Route::post('/riwayat/{id}/batalkan', [HistoryController::class, 'cancel'])->name('history.cancel');
+
+Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function () {
+    Route::get('/kegiatan', fn (Request $r) => view('admin.events.index', [
+        'events' => Event::query()
+            ->when($r->query('jenis'), fn ($q, $j) => $q->where('jenis', $j))
+            ->when($r->query('q'), fn ($q, $s) => $q->where(fn ($w) => $w->where('kode', 'like', "%{$s}%")->orWhere('judul', 'like', "%{$s}%")))
+            ->orderByDesc('aktif')->orderByRaw('CAST(kode AS UNSIGNED)')->get(),
+    ]))->name('events.index');
+    Route::get('/kegiatan/baru', fn () => view('admin.events.form', ['event' => null]))->name('events.create');
+    Route::get('/kegiatan/{id}/ubah', fn (int $id) => view('admin.events.form', ['event' => Event::findOrFail($id)]))->name('events.edit');
+
+    Route::get('/pengguna', fn () => view('admin.users.index', ['users' => User::orderBy('nama')->get()]))->name('users.index');
+    Route::get('/pengguna/baru', fn () => view('admin.users.form', ['user' => null]))->name('users.create');
+    Route::get('/pengguna/{id}/ubah', fn (int $id) => view('admin.users.form', ['user' => User::findOrFail($id)]))->name('users.edit');
+
+    Route::get('/audit', fn (Request $r) => view('admin.audit', [
+        'logs' => AuditLog::with('user')
+            ->when($r->query('aksi'), fn ($q, $a) => $q->whereIn('aksi', (array) $a))
+            ->latest('created_at')->paginate(25)->withQueryString(),
+    ]))->name('audit');
+    Route::view('/uji-layout', 'admin.layout-test')->name('layout.test');
+});
+});

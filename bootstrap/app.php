@@ -11,10 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->validateCsrfTokens(except: [
-            'api/*',
-        ]);
+        $middleware->alias(['active' => \App\Http\Middleware\EnsureUserIsActive::class]);
+        $middleware->redirectUsersTo('/terbitkan');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Nomor ganda adalah kesalahan isian, bukan galat server: tampilkan pesannya ke operator.
+        $exceptions->render(fn (\App\Exceptions\DuplicateNumberException $e, $request) => $request->expectsJson()
+            ? response()->json(['message' => $e->getMessage()], 409)
+            : back()->withInput()->with('error', $e->getMessage()));
     })->create();
