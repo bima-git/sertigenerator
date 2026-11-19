@@ -2,14 +2,14 @@
 
 **Nama / Peran:** Bima — Backend Logic, Penomoran (*Numbering Engine*) & Proses Penerbitan (*Issuance Orchestrator*)  
 **Branch Git:** `feature/bima-numbering`  
-**Status Tahap:** Langkah 1 & Langkah 2 (Fase 2A & Fase 2B) Selesai — **100% Lulus Uji Otomatis (32 Tests, 73 Assertions)**  
+**Status Tahap:** Langkah 1, Langkah 2, & Langkah 3 (Fase 2A, 2B, & 6A) Selesai — **100% Lulus Uji Otomatis (38 Tests, 97 Assertions)**  
 **Terakhir Diperbarui:** 19 November 2026
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-Dokumen ini mencatat seluruh detail implementasi, arsitektur kelas, skema data, dan hasil pengujian yang telah diselesaikan oleh Bima. Dokumen ini dirancang sebagai referensi teknis yang transparan dan dapat dibagikan kepada seluruh rekan tim (**Akmal, Ifant, dan Giska**) agar proses integrasi berjalan lancar tanpa tumpang tindih.
+Dokumen ini mencatat seluruh detail implementasi, arsitektur kelas, skema data, endpoint API, dan hasil pengujian yang telah diselesaikan oleh Bima. Dokumen ini dirancang sebagai referensi teknis yang transparan dan dapat dibagikan kepada seluruh rekan tim (**Akmal, Ifant, dan Giska**) agar proses integrasi berjalan lancar tanpa tumpang tindih.
 
 ---
 
@@ -58,7 +58,7 @@ Sesuai **PRD Bagian 7.1**, dibuat tabel dan model data pendukung penomoran:
 * **Lokasi Berkas:** [`app/Services/NumberAllocator.php`](file:///D:/MAGANG_2026/sertigenerator/app/Services/NumberAllocator.php)
 * **Aturan Bisnis Sesuai PRD NM-03 & NM-04:**
   1. `next(int $eventId, int $seri, int $tahun): int`
-     * Menghitung nilai maksimum urut pada kombinasi `(event_id, seri, tahun)` lalu ditambah 1:
+     * Menghitung nilai maksimum urut pada kombinasi `(event_id, seri, tahun)` ditambah 1:
        $$\text{COALESCE}(\max(\text{urut}), 0) + 1$$
      * **Sertifikat yang berstatus `dibatalkan` tetap ikut dihitung**, sehingga nomor yang sudah pernah dibatalkan tidak akan pernah dialokasikan ulang untuk peserta baru.
   2. `isAvailable(int $eventId, int $seri, int $urut, int $tahun): bool`
@@ -70,26 +70,63 @@ Sesuai **PRD Bagian 7.1**, dibuat tabel dan model data pendukung penomoran:
 
 ---
 
+### E. Controller & Rute API Form Penerbitan (`IssueController`) — *Langkah 3*
+* **Lokasi Berkas:** [`app/Http/Controllers/IssueController.php`](file:///D:/MAGANG_2026/sertigenerator/app/Http/Controllers/IssueController.php) & [`routes/web.php`](file:///D:/MAGANG_2026/sertigenerator/routes/web.php)
+* **Sesuai Design System Bagian 3.3:**
+  1. **Endpoint `GET /api/nomor` (Nama Rute: `api.number`):**
+     * **Parameter Query:** `event_id` (wajib), `seri` (opsional, default 1), `tanggal_terbit` (opsional, default hari ini), `urut` (opsional jika diisi manual oleh operator).
+     * **Contoh Output JSON (Seminar):**
+       ```json
+       {
+         "bernomor": true,
+         "urut_saran": 2,
+         "urut_aktif": 2,
+         "nomor_lengkap": "35/001/002/Xcodetraining/X/2026",
+         "kode": "35",
+         "penerbit": "Xcodetraining",
+         "seri": 1,
+         "tahun": 2026,
+         "is_available": true
+       }
+       ```
+     * **Contoh Output JSON (Bootcamp):**
+       ```json
+       {
+         "bernomor": false,
+         "urut_saran": null,
+         "urut_aktif": null,
+         "nomor_lengkap": null,
+         "kode": "15",
+         "penerbit": "Bootcamp",
+         "seri": null,
+         "tahun": 2026,
+         "is_available": true
+       }
+       ```
+  2. **Endpoint `GET /api/kegiatan` (Nama Rute: `api.events`):**
+     * **Parameter Query:** `jenis` (`seminar` atau `bootcamp`), `q` (kata kunci pencarian kode atau judul).
+     * Mengembalikan daftar kegiatan aktif untuk mengisi pilihan dropdown searchable-select form Giska.
+
+---
+
 ## 3. Hasil Pengujian Otomatis (*Automated Tests*)
 
-Pengujian dijalankan melalui `php artisan test`. Seluruh 32 pengujian berstatus **100% HIJAU (PASS)**.
+Pengujian dijalankan melalui `php artisan test`. Seluruh 38 pengujian berstatus **100% HIJAU (PASS)**.
 
 ### A. Pengujian Unit Test (`tests/Unit/Services/`): 20 Tests, 47 Assertions
 * **`NumberGeneratorTest` (14 pengujian):** Lulus 100% seluruh kasus uji wajib PRD 5.3 (Kasus 1 s.d. 7, kode `35`, `15`, `23`, `255`, batas bulan Januari/Desember, parsing, dan proteksi input tidak valid).
 * **`RomanTest` (5 pengujian):** Lulus konversi bulan 1–12, konversi umum hingga 3999, serta penanganan exception angka di luar batas.
 
-### B. Pengujian Feature / Integrasi Database (`tests/Feature/Services/NumberAllocatorTest.php`): 11 Tests, 25 Assertions
-1. `test_next_returns_one_when_no_certificates_exist`: Alokasi awal dimulai dari nomor 1.
-2. `test_next_increments_sequentially`: Nomor urut bertambah sekuensial (1 -> 2 -> 3).
-3. `test_next_follows_max_value_when_non_sequential`: Jika ada loncatan nomor manual oleh operator, saran berikutnya adalah `MAX + 1`.
-4. `test_allocation_is_isolated_per_series`: Penomoran diisolasi per nomor seri (seri 1 tidak mencampuri seri 2).
-5. `test_allocation_is_isolated_per_year`: Penomoran diisolasi per tahun terbit (tahun 2025 tidak mencampuri tahun 2026).
-6. `test_allocation_is_isolated_per_event`: Penomoran diisolasi antar-event yang berbeda.
-7. `test_cancelled_certificates_are_included_in_next_calculation`: Sertifikat berstatus dibatalkan tetap dihitung, nomor batal tidak dipakai ulang.
-8. `test_is_available_checks_availability`: Mendeteksi nomor bebas vs nomor yang sudah terpakai (termasuk yang dibatalkan).
-9. `test_suggest_returns_complete_payload_for_numbered_event`: Menghasilkan payload lengkap dan valid untuk form penerbitan seminar.
-10. `test_suggest_returns_null_fields_for_unnumbered_event`: Menghasilkan `bernomor => false` dan nomor `null` untuk kegiatan bootcamp.
-11. `test_database_enforces_unique_constraint`: Database menolak duplikasi nomor via `QueryException` pada *unique constraint*.
+### B. Pengujian Feature Alokasi Database (`tests/Feature/Services/NumberAllocatorTest.php`): 11 Tests, 25 Assertions
+* Lulus uji alokasi sekuensial, isolasi per seri/tahun/event, aturan sertifikat dibatalkan tidak terpakai ulang, dan penolakan duplikasi via *database unique constraint*.
+
+### C. Pengujian Feature API Form Penerbitan (`tests/Feature/Api/NumberSuggestTest.php`): 6 Tests, 24 Assertions
+1. `test_api_nomor_returns_suggestion_for_seminar`: API mengembalikan nomor usulan dan nomor lengkap yang valid.
+2. `test_api_nomor_increments_when_certificate_already_exists`: API otomatis menaikkan nomor urut jika sertifikat sebelumnya sudah terbit.
+3. `test_api_nomor_detects_manual_urut_availability`: API mendeteksi ketersediaan jika operator mengetik nomor urut manual (menandai `is_available: false` jika sudah ada yang memakai).
+4. `test_api_nomor_returns_null_fields_for_bootcamp`: API mengembalikan `bernomor: false` untuk kegiatan bootcamp.
+5. `test_api_nomor_validates_required_and_existing_event`: Validasi HTTP 422 jika `event_id` kosong atau tidak ada di database.
+6. `test_api_kegiatan_returns_list_and_filters`: API mengembalikan daftar kegiatan aktif dan menyaring berdasarkan jenis (`seminar`/`bootcamp`) dan pencarian (`q`).
 
 ---
 
@@ -97,17 +134,22 @@ Pengujian dijalankan melalui `php artisan test`. Seluruh 32 pengujian berstatus 
 
 | Rekan Tim | Titik Kolaborasi dengan Bima | Kontrak / Panduan Teknis |
 |---|---|---|
-| **Giska** (Frontend) | Form Penerbitan Dinamis | Giska akan memanggil endpoint `GET /api/nomor` (Langkah 3) yang langsung didukung oleh `NumberAllocator::suggest()`. Output menyajikan saran urut dan pratinjau string nomor secara *realtime*. |
+| **Giska** (Frontend) | Form Penerbitan Dinamis | Giska kini dapat memanggil endpoint `GET /api/nomor` via `fetch()` di JavaScript form-nya. Setiap kali operator memilih kegiatan atau mengubah tanggal terbit, form memanggil endpoint ini dan langsung menampilkan `nomor_lengkap` dan `urut_saran` di panel ringkasan secara *realtime*. |
 | **Ifant** (PDF Generator) | Pemasangan Nomor di Template Seminar | Ifant mencetak string `nomor_lengkap` pada koordinat A4 Seminar: **X = 259 mm (Center)**, **Baseline Y = 77.2 mm**, font Serif ~10 pt. |
 | **Akmal** (Database & Admin) | Skema Tabel `events` & `certificates` | Skema yang dibuat Bima 100% identik dengan PRD 7.1. Pada transaksi penerbitan (Langkah 4), baris `events` dikunci dengan `lockForUpdate()`. |
 
 ---
 
-## 5. Rencana Langkah Berikutnya (Langkah 3)
+## 5. Rencana Langkah Berikutnya (Langkah 4)
 
 Tahap berikutnya yang akan dikerjakan oleh Bima:
-* **Langkah 3: Endpoint API Penomoran untuk Frontend Giska (`GET /api/nomor`)**
-  * Membangun controller / method `IssueController@suggest` (Route: `api.number`).
-  * Menerima query parameter: `event_id`, `seri` (default 1), `tanggal_terbit`, dan `urut` (opsional jika ditimpa operator).
-  * Mengembalikan respons JSON siap pakai untuk frontend form dinamis Giska.
-  * Menulis Feature Test untuk memastikan respon API konsisten dan menangani validasi input.
+* **Langkah 4: Orkestrasi Penerbitan Atomik (`IssueService`) (Fase 6B)**
+  * Membuat Form Request `App\Http\Requests\IssueRequest` untuk validasi input penerbitan seminar dan bootcamp.
+  * Membangun service `App\Services\IssueService`:
+    * Eksekusi di dalam `DB::transaction()`.
+    * Penguncian baris kegiatan dengan `lockForUpdate()`.
+    * Generate nomor via `NumberAllocator` dan `NumberGenerator`.
+    * Simpan sertifikat dengan status `terbit`, salinan `data_cetak` JSON, dan `versi_layout`.
+    * Integrasi `PdfRenderer` sebelum transaksi commit (jika render gagal $\rightarrow$ rollback otomatis sehingga nomor tetap aman tidak terpakai).
+  * Menyediakan endpoint `POST /terbitkan` dan `POST /pratinjau`.
+  * Menulis Feature Test alur penerbitan seminar, bootcamp, dan uji atomik rollback.
