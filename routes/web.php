@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\IssueController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,3 +25,12 @@ Route::get('/api/nomor', [IssueController::class, 'suggest'])->name('api.number'
 */
 Route::post('/pratinjau', [IssueController::class, 'preview'])->name('issue.preview');
 Route::post('/terbitkan', [IssueController::class, 'store'])->name('issue.store');
+
+/*
+|--------------------------------------------------------------------------
+| Aksi Riwayat, Unduh Ulang & Pembatalan Sertifikat (Modul Bima & Akmal)
+| Sesuai PRD Bagian 4.6 dan Design System Bagian 3.3 & 3.4
+|--------------------------------------------------------------------------
+*/
+Route::get('/riwayat/{id}/pdf', [HistoryController::class, 'download'])->name('history.pdf');
+Route::post('/riwayat/{id}/batalkan', [HistoryController::class, 'cancel'])->name('history.cancel');
