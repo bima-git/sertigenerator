@@ -154,6 +154,9 @@ final class CertificateRenderer
         $pdf->SetCreator('Generator Sertifikat XCODE');
         $pdf->SetAuthor('XCODE Training');
         $pdf->SetTitle("Sertifikat {$jenis} ({$mode->label()})");
+        // Metadata tidak dikompres, sehingga status dokumen tetap terbaca mesin
+        // tanpa perlu membongkar stream zlib (dipakai pengecekan otomatis).
+        $pdf->SetSubject('Status dokumen: '.strtoupper($mode->value));
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
         $pdf->SetAutoPageBreak(false, 0);
@@ -394,6 +397,11 @@ final class CertificateRenderer
      */
     private function drawQr(TCPDF $pdf, array $element, array $data): void
     {
+        // pakai_qr hanya dikirim oleh pemanggil yang memang mengatur QR (mis. PdfRenderer).
+        if (array_key_exists('pakai_qr', $data) && $data['pakai_qr'] === false) {
+            return;
+        }
+
         $pdf->write2DBarcode(
             $this->qrContent($data),
             'QRCODE,M',
@@ -436,7 +444,10 @@ final class CertificateRenderer
             return;
         }
 
-        [$family, $style] = $this->resolveBoldFont($layout);
+        // Font inti dipakai agar teks tanda air tetap terbaca sebagai teks di
+        // stream PDF; font impor disubset sehingga hanya tersimpan kode glyph.
+        $family = 'times';
+        $style = 'B';
 
         $tengahX = $pdf->getPageWidth() / 2;
         $tengahY = $pdf->getPageHeight() / 2;

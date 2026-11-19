@@ -234,6 +234,10 @@ final class CertificateRendererTest extends TestCase
 
             preg_match_all('/\[\((.*?)\)\] TJ/', $isi, $cocok);
             $teks .= implode(' ', $cocok[1]).' ';
+
+            // Font inti TCPDF menulis teks dengan operator Tj, bukan array TJ.
+            preg_match_all('/\((.*?)\) Tj/', $isi, $cocokTj);
+            $teks .= implode(' ', $cocokTj[1]).' ';
         }
 
         return str_replace(['\\(', '\\)'], ['(', ')'], $teks);
