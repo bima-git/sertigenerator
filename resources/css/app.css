@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
+/* Ikon lewat CSS (bukan JS) agar ikut termuat sebelum halaman digambar */
+@import '@phosphor-icons/web/regular';
+@import '@phosphor-icons/web/fill';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -309,14 +312,16 @@
     .bar {
         flex: 1; border-radius: 999px; min-height: 8px;
         background: repeating-linear-gradient(135deg, var(--surface-sunken) 0 4px, var(--line) 4px 7px);
-        transform-origin: bottom; transform: scaleY(var(--grow, 0));
+        transform-origin: bottom;
         transition: transform 0.9s var(--ease-out) calc(var(--i, 0) * 70ms), background 0.2s;
     }
+    /* Batang hanya tumbuh bila grafik berada di bawah layar saat halaman dibuka */
+    .reveal-pending .bar { transform: scaleY(0); }
+    .reveal-pending.in-view .bar { transform: none; }
     .bar.is-peak { background: linear-gradient(180deg, var(--accent), var(--brand)); }
     .bar-col:hover .bar:not(.is-peak) { background: var(--brand-soft); }
     .bar-tip { opacity: 0; transform: translateY(4px); transition: opacity 0.2s, transform 0.25s var(--ease-out); }
     .bar-col:hover .bar-tip, .bar-col:focus-visible .bar-tip, .bar-col .bar.is-peak + .bar-tip { opacity: 1; transform: none; }
-    .in-view .bar { --grow: 1; }
 
     /* ---------- Modal ---------- */
     dialog.modal {
@@ -331,21 +336,24 @@
     .skeleton { border-radius: 8px; background: linear-gradient(90deg, var(--surface-sunken) 25%, var(--surface-alt) 50%, var(--surface-sunken) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
 }
 
-/* ---------- Gerak masuk halaman ---------- */
-[data-reveal] { opacity: 0; transform: translateY(14px); }
-[data-reveal].in-view {
+/* ---------- Muncul saat di-scroll ----------
+ * Konten selalu terlihat secara bawaan. JS hanya memberi .reveal-pending pada
+ * elemen yang berada di bawah layar saat halaman dibuka, jadi tidak ada kedip
+ * atau jeda pada konten yang langsung terlihat. */
+.reveal-pending { opacity: 0; transform: translateY(14px); }
+.reveal-pending.in-view {
     opacity: 1; transform: none;
     transition: opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out);
     transition-delay: calc(var(--i, 0) * 60ms);
 }
-.no-js [data-reveal] { opacity: 1; transform: none; }
 
 /* Cahaya oranye di sidebar dan halaman masuk */
 .glow {
     position: absolute; pointer-events: none; border-radius: 999px; filter: blur(60px);
     background: radial-gradient(circle, var(--accent), transparent 65%);
-    animation: drift 14s ease-in-out infinite alternate;
 }
+/* Bergerak hanya di halaman Masuk; di layout utama diam agar tidak melompat saat pindah menu */
+.glow-drift { animation: drift 14s ease-in-out infinite alternate; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes shimmer { to { background-position: -200% 0; } }
@@ -357,15 +365,18 @@
 @keyframes toast-in { from { opacity: 0; transform: translateY(-12px) scale(0.98); } }
 @keyframes check-draw { from { stroke-dashoffset: 24; } }
 
-::view-transition-old(root) { animation: 0.18s ease-out both fade-out; }
-::view-transition-new(root) { animation: 0.32s var(--ease-out) both page-in; }
-@keyframes fade-out { to { opacity: 0; } }
-@keyframes page-in { from { opacity: 0; transform: translateY(6px); } }
+/* Pindah halaman: browser menahan tampilan lama sampai halaman baru siap lalu
+ * menukarnya seketika. Tanpa layar putih dan tanpa animasi pudar yang terasa lambat.
+ * Sidebar diberi nama sendiri agar tidak ikut digambar ulang. */
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) { animation: none; }
+.vt-sidebar { view-transition-name: sidebar; }
+.vt-topbar { view-transition-name: topbar; }
+.vt-tabbar { view-transition-name: tabbar; }
 
 /* Kurangi gerak: semua transisi dan animasi mati (Design System 4.3) */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-    [data-reveal] { opacity: 1; transform: none; }
-    .bar { transform: none; }
-    @view-transition { navigation: none; }
+    .reveal-pending, .reveal-pending .bar { opacity: 1; transform: none; }
 }

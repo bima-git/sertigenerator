@@ -1,10 +1,8 @@
 <!DOCTYPE html>
-<html lang="id" class="no-js">
+<html lang="id">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    @include('layouts.head')
     <title>@yield('title') | XCODE Sertifikat</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-dvh antialiased grid place-items-center p-4">
     <main class="card relative overflow-hidden w-full max-w-md p-8 text-center" data-reveal>

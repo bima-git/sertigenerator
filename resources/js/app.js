@@ -1,29 +1,28 @@
 import './bootstrap';
-import '@phosphor-icons/web/regular';
-import '@phosphor-icons/web/fill';
 import { initIssueForm } from './issue-form';
 
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-/* Masuk halaman: elemen [data-reveal] muncul bertahap saat terlihat. */
+/*
+ * Muncul saat di-scroll. Yang sudah terlihat saat halaman dibuka dibiarkan apa adanya
+ * (tanpa animasi) supaya refresh dan pindah menu tidak berkedip. Hanya elemen di bawah
+ * layar yang disembunyikan lalu dimunculkan ketika di-scroll ke sana.
+ */
 function initReveal() {
-    const items = $$('[data-reveal], [data-chart]');
-    if (reduce || !('IntersectionObserver' in window)) {
-        items.forEach((el) => el.classList.add('in-view'));
-        $$('[data-count]').forEach((el) => (el.textContent = el.dataset.count));
-        return;
-    }
+    if (reduce || !('IntersectionObserver' in window)) return;
+    const fold = window.innerHeight;
+    const pending = $$('[data-reveal], [data-chart]').filter((el) => el.getBoundingClientRect().top > fold);
+    if (!pending.length) return;
     const io = new IntersectionObserver((entries) => {
         entries.forEach((e) => {
             if (!e.isIntersecting) return;
             e.target.classList.add('in-view');
             $$('[data-count]', e.target).forEach(countUp);
-            if (e.target.matches('[data-count]')) countUp(e.target);
             io.unobserve(e.target);
         });
     }, { threshold: 0.15 });
-    items.forEach((el) => io.observe(el));
+    pending.forEach((el) => { el.classList.add('reveal-pending'); io.observe(el); });
 }
 
 /* Angka KPI naik dari 0, memberi tahu bahwa data baru dimuat. */
@@ -216,7 +215,6 @@ function initConfirm() {
     }, true);
 }
 
-document.documentElement.classList.remove('no-js');
 initReveal();
 initSpotlight();
 initSideHover();

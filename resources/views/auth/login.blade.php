@@ -1,19 +1,16 @@
 <!DOCTYPE html>
-<html lang="id" class="no-js">
+<html lang="id">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    @include('layouts.head')
     <title>Masuk | XCODE Sertifikat</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-dvh antialiased bg-side lg:bg-surface">
 <main class="min-h-dvh grid lg:grid-cols-[1.1fr_1fr]">
 
     {{-- Panel merek --}}
     <section class="relative overflow-hidden bg-side text-white px-6 pt-10 pb-8 sm:px-10 lg:p-14 flex flex-col">
-        <div class="glow w-[420px] h-[420px] -right-32 top-1/3 opacity-50"></div>
-        <div class="glow w-72 h-72 -left-24 -bottom-24 opacity-30" style="animation-delay: -6s"></div>
+        <div class="glow glow-drift w-[420px] h-[420px] -right-32 top-1/3 opacity-50"></div>
+        <div class="glow glow-drift w-72 h-72 -left-24 -bottom-24 opacity-30" style="animation-delay: -6s"></div>
         <div class="absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:28px_28px]" aria-hidden="true"></div>
 
         <div class="relative flex items-center gap-3" data-reveal>
