@@ -8,7 +8,7 @@
     $hour = (int) now()->format('G');
     $salam = $hour < 11 ? 'Selamat pagi' : ($hour < 15 ? 'Selamat siang' : ($hour < 18 ? 'Selamat sore' : 'Selamat malam'));
     $aksi = [
-        'masuk' => ['masuk ke sistem', 'ph-sign-in', 'badge-neutral'], 'gagal_masuk' => ['gagal masuk', 'ph-lock-key', 'badge-warning'],
+        'masuk' => ['masuk ke sistem', 'ph-sign-in', 'badge-neutral'], 'keluar' => ['keluar', 'ph-sign-out', 'badge-neutral'], 'gagal_masuk' => ['gagal masuk', 'ph-lock-key', 'badge-warning'],
         'terbit' => ['menerbitkan', 'ph-seal-check', 'badge-success'], 'unduh_ulang' => ['mengunduh ulang', 'ph-download-simple', 'badge-info'],
         'batal' => ['membatalkan', 'ph-prohibit', 'badge-danger'], 'ubah_event' => ['mengubah kegiatan', 'ph-calendar-dots', 'badge-brand'],
         'ubah_user' => ['mengubah pengguna', 'ph-user-gear', 'badge-brand'],
@@ -34,7 +34,7 @@
 </section>
 
 {{-- KPI --}}
-<div class="mt-5 grid gap-4 grid-cols-2 xl:grid-cols-4">
+<div class="mt-5 grid gap-4 grid-cols-[repeat(2,minmax(0,1fr))] xl:grid-cols-4">
     <x-kpi label="Total terbit" :value="$stats['total']" icon="ph-seal-check" tone="brand" note="Termasuk yang dibatalkan" :i="1" :spark="array_values($monthly)" />
     <x-kpi label="Seminar/Webinar" :value="$stats['seminar']" icon="ph-presentation-chart" tone="accent" :i="2" />
     <x-kpi label="Bootcamp" :value="$stats['bootcamp']" icon="ph-graduation-cap" tone="info" :i="3" />
@@ -139,7 +139,7 @@
                             </td>
                             <td data-label="Peserta">
                                 <a href="{{ route('history.show', $c->id) }}" class="font-medium text-fg hover:text-brand">{{ $c->nama_peserta }}</a>
-                                <span class="mt-0.5 flex items-center gap-1.5 text-xs text-muted max-md:justify-end">
+                                <span class="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
                                     <span class="badge {{ $c->jenis === 'seminar' ? 'badge-brand' : 'badge-info' }} !h-5 !px-2">{{ $c->jenis === 'seminar' ? 'Seminar' : 'Bootcamp' }}</span>
                                     <span class="truncate max-w-[180px]">{{ $c->event?->judul }}</span>
                                 </span>

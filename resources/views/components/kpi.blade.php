@@ -6,8 +6,9 @@
 @endphp
 <div class="tile tile-{{ $tone }}" data-reveal style="--i: {{ $i }}">
     <div class="flex items-start justify-between gap-3">
-        <p class="text-sm font-medium text-fg">{{ $label }}</p>
-        <span class="tile-icon {{ $iconBg }}"><i class="ph-fill {{ $icon }}"></i></span>
+        {{-- <wbr> setelah garis miring: "Seminar/Webinar" boleh patah baris di ponsel. --}}
+        <p class="min-w-0 text-sm font-medium text-fg">{!! str_replace('/', '/<wbr>', e($label)) !!}</p>
+        <span class="tile-icon flex-none {{ $iconBg }}"><i class="ph-fill {{ $icon }}"></i></span>
     </div>
     <p class="num mt-5 text-[32px] font-semibold leading-none text-fg">
         <span class="count" style="--to: {{ (int) $value }}; --i: {{ $i }}" aria-hidden="true"></span>
