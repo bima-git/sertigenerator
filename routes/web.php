@@ -1,11 +1,34 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\IssueController;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Autentikasi Pengguna (Sesuai PRD Section 4.1 & Design System 3.1 - 3.2)
+|--------------------------------------------------------------------------
+*/
+Route::get('/masuk', [AuthController::class, 'create'])->name('login');
+Route::post('/masuk', [AuthController::class, 'store'])->name('login.attempt');
+Route::post('/keluar', [AuthController::class, 'destroy'])->name('logout');
+
+// REST API Login Endpoints (Tanpa CSRF via api/* exception)
+Route::post('/api/login', [AuthController::class, 'store'])->name('api.login');
+Route::post('/api/logout', [AuthController::class, 'destroy'])->name('api.logout');
+Route::get('/api/me', [AuthController::class, 'me'])->name('api.me');
+
+/*
+|--------------------------------------------------------------------------
+| Halaman Utama: Pengalihan sesuai status sesi (Design System 3.2 & 3.5)
+|--------------------------------------------------------------------------
+*/
 Route::get('/', function () {
-    return view('welcome');
+    if (auth()->check()) {
+        return redirect()->route('issue.store');
+    }
+    return redirect()->route('login');
 })->name('home');
 
 /*
