@@ -103,11 +103,9 @@ class IssueController extends Controller
      */
     public function store(IssueRequest $request, IssueService $issueService): Response
     {
-        $user = $request->user() ?? User::query()->first() ?? User::create([
-            'name'     => 'Operator Cadangan',
-            'email'    => 'operator@xcode.test',
-            'password' => bcrypt('password'),
-        ]);
+        // Tanpa akun cadangan buatan otomatis: penerbit harus pengguna nyata.
+        $user = User::current();
+        abort_unless($user, 401);
 
         $result = $issueService->issue($request->validated(), $user);
 

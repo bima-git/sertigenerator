@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,15 +22,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // $me untuk layout dan halaman yang menampilkan menu sesuai peran.
-        // ponytail: fallback admin pertama hanya sampai autentikasi (modul Akmal) aktif,
-        // samakan dengan fallback di IssueController/HistoryController.
+        // $me untuk layout dan halaman yang menampilkan menu sesuai peran (lihat User::current()).
         View::composer(['layouts.app', 'history.*', 'admin.*', 'account.*'], function ($view) {
             static $me;
-            $me ??= auth()->user()
-                ?? User::query()->where('peran', 'admin')->first()
-                ?? new User(['nama' => 'Tamu', 'username' => 'tamu', 'peran' => 'operator']);
+            $me ??= User::current() ?? new User(['nama' => 'Tamu', 'username' => 'tamu', 'peran' => 'operator']);
             $view->with('me', $me);
         });
+
+        // Gerbang peran admin untuk rute /admin dan pembatalan.
+        Gate::define('admin', fn (User $user) => $user->isAdmin());
     }
 }

@@ -17,6 +17,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::view('/masuk', 'auth.login')->name('login');
+
+/*
+ * Selain local/testing, semua rute wajib login dan /admin wajib peran admin.
+ * ponytail: pengecualian local/testing hanya sampai POST /masuk (modul Akmal) ada;
+ * setelah itu pakai middleware tanpa syarat dan tambahkan actingAs di test API.
+ */
+$open = app()->environment('local', 'testing');
+
+Route::middleware($open ? [] : ['auth'])->group(function () use ($open) {
 Route::redirect('/', '/terbitkan')->name('home');
 
 Route::get('/terbitkan', [IssueController::class, 'create'])->name('issue.form');
@@ -34,7 +43,7 @@ Route::post('/terbitkan', [IssueController::class, 'store'])->name('issue.store'
 Route::get('/riwayat/{id}/pdf', [HistoryController::class, 'download'])->name('history.pdf');
 Route::post('/riwayat/{id}/batalkan', [HistoryController::class, 'cancel'])->name('history.cancel');
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->name('admin.')->middleware($open ? [] : ['can:admin'])->group(function () {
     Route::get('/kegiatan', fn (Request $r) => view('admin.events.index', [
         'events' => Event::query()
             ->when($r->query('jenis'), fn ($q, $j) => $q->where('jenis', $j))
@@ -54,4 +63,5 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->latest('created_at')->paginate(25)->withQueryString(),
     ]))->name('audit');
     Route::view('/uji-layout', 'admin.layout-test')->name('layout.test');
+});
 });

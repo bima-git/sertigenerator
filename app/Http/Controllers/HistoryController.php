@@ -21,8 +21,9 @@ class HistoryController extends Controller
      */
     public function index(Request $request): View
     {
-        $me = $request->user() ?? User::query()->where('peran', 'admin')->first();
-        $mine = fn ($q) => $me && ! $me->isAdmin() ? $q->where('dibuat_oleh', $me->id) : $q;
+        $me = User::current();
+        abort_unless($me, 401);
+        $mine = fn ($q) => $me->isAdmin() ? $q : $q->where('dibuat_oleh', $me->id);
 
         $certificates = $mine(Certificate::query()->with(['event:id,kode,judul', 'creator:id,nama']))
             ->when($request->query('q'), fn ($q, $s) => $q->where(fn ($w) => $w->where('nama_peserta', 'like', "%{$s}%")->orWhere('nomor_lengkap', 'like', "%{$s}%")))
@@ -49,7 +50,9 @@ class HistoryController extends Controller
                 'batal' => $all->where('status', 'dibatalkan')->count(),
             ],
             'monthly' => $monthly,
-            'activity' => AuditLog::with('user:id,nama')->latest('created_at')->limit(5)->get(),
+            'activity' => AuditLog::with('user:id,nama')
+                ->when(! $me->isAdmin(), fn ($q) => $q->where('user_id', $me->id))
+                ->latest('created_at')->limit(5)->get(),
         ]);
     }
 
@@ -61,10 +64,19 @@ class HistoryController extends Controller
     public function show(Request $request, int $id): View
     {
         $c = Certificate::with(['event', 'creator', 'canceller'])->findOrFail($id);
-        $me = $request->user();
-        abort_if($me && ! $me->isAdmin() && $c->dibuat_oleh !== $me->id, 404);
+        $this->authorizeOwner($c);
 
         return view('history.show', ['c' => $c]);
+    }
+
+    /** Operator hanya boleh mengakses sertifikat buatannya; Admin semua (Design System bagian 2). */
+    private function authorizeOwner(Certificate $c): User
+    {
+        $me = User::current();
+        abort_unless($me, 401);
+        abort_if(! $me->isAdmin() && $c->dibuat_oleh !== $me->id, 404);
+
+        return $me;
     }
 
     /**
@@ -75,8 +87,9 @@ class HistoryController extends Controller
      */
     public function download(Request $request, int $id, HistoryService $historyService): Response
     {
-        $user = $request->user();
-        $result = $historyService->download($id, $user);
+        $certificate = Certificate::with('event')->findOrFail($id);
+        $user = $this->authorizeOwner($certificate);
+        $result = $historyService->download($certificate, $user);
 
         return response($result['pdf'], 200, [
             'Content-Type'         => 'application/pdf',
@@ -103,7 +116,7 @@ class HistoryController extends Controller
         ]);
 
         /** @var User|null $admin */
-        $admin = $request->user() ?? User::query()->where('peran', 'admin')->first();
+        $admin = User::current();
 
         if (! $admin || ! $admin->isAdmin()) {
             abort(403, 'Hanya peran Admin yang berwenang membatalkan sertifikat.');
