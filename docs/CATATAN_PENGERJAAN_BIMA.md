@@ -2,7 +2,7 @@
 
 **Nama / Peran:** Bima — Backend Logic, Penomoran (*Numbering Engine*) & Proses Penerbitan (*Issuance Orchestrator*)  
 **Branch Git:** `feature/bima-numbering`  
-**Status Tahap:** Langkah 1, Langkah 2, & Langkah 3 (Fase 2A, 2B, & 6A) Selesai — **100% Lulus Uji Otomatis (38 Tests, 97 Assertions)**  
+**Status Tahap:** Langkah 1, Langkah 2, Langkah 3, & Langkah 4 Selesai — **100% Lulus Uji Otomatis (44 Tests, 128 Assertions)**  
 **Terakhir Diperbarui:** 19 November 2026
 
 ---
@@ -51,6 +51,9 @@ Sesuai **PRD Bagian 7.1**, dibuat tabel dan model data pendukung penomoran:
    * Dilengkapi constraint integritas ganda:
      * `UNIQUE KEY (nomor_lengkap)`
      * `UNIQUE KEY uq_event_seri_urut_tahun (event_id, seri, urut, tahun)`
+3. **Tabel & Model `AuditLog`:**
+   * Berkas: [`database/migrations/2026_11_19_000003_create_audit_logs_table.php`](file:///D:/MAGANG_2026/sertigenerator/database/migrations/2026_11_19_000003_create_audit_logs_table.php) & [`app/Models/AuditLog.php`](file:///D:/MAGANG_2026/sertigenerator/app/Models/AuditLog.php)
+   * Mencatat seluruh aksi penting: pelaku (`user_id`), jenis aksi (`aksi`), `target_id`, `detail` JSON, IP, dan timestamp.
 
 ---
 
@@ -74,59 +77,56 @@ Sesuai **PRD Bagian 7.1**, dibuat tabel dan model data pendukung penomoran:
 * **Lokasi Berkas:** [`app/Http/Controllers/IssueController.php`](file:///D:/MAGANG_2026/sertigenerator/app/Http/Controllers/IssueController.php) & [`routes/web.php`](file:///D:/MAGANG_2026/sertigenerator/routes/web.php)
 * **Sesuai Design System Bagian 3.3:**
   1. **Endpoint `GET /api/nomor` (Nama Rute: `api.number`):**
-     * **Parameter Query:** `event_id` (wajib), `seri` (opsional, default 1), `tanggal_terbit` (opsional, default hari ini), `urut` (opsional jika diisi manual oleh operator).
-     * **Contoh Output JSON (Seminar):**
-       ```json
-       {
-         "bernomor": true,
-         "urut_saran": 2,
-         "urut_aktif": 2,
-         "nomor_lengkap": "35/001/002/Xcodetraining/X/2026",
-         "kode": "35",
-         "penerbit": "Xcodetraining",
-         "seri": 1,
-         "tahun": 2026,
-         "is_available": true
-       }
-       ```
-     * **Contoh Output JSON (Bootcamp):**
-       ```json
-       {
-         "bernomor": false,
-         "urut_saran": null,
-         "urut_aktif": null,
-         "nomor_lengkap": null,
-         "kode": "15",
-         "penerbit": "Bootcamp",
-         "seri": null,
-         "tahun": 2026,
-         "is_available": true
-       }
-       ```
+     * Menghasilkan saran nomor urut dan *live preview* nomor lengkap untuk form Giska.
   2. **Endpoint `GET /api/kegiatan` (Nama Rute: `api.events`):**
-     * **Parameter Query:** `jenis` (`seminar` atau `bootcamp`), `q` (kata kunci pencarian kode atau judul).
-     * Mengembalikan daftar kegiatan aktif untuk mengisi pilihan dropdown searchable-select form Giska.
+     * Mengembalikan daftar kegiatan aktif untuk mengisi komponen dropdown searchable-select form.
+
+---
+
+### F. Orkestrasi Penerbitan Atomik (`IssueService`) — *Langkah 4*
+* **Lokasi Berkas:**
+  * Service: [`app/Services/IssueService.php`](file:///D:/MAGANG_2026/sertigenerator/app/Services/IssueService.php)
+  * Form Request: [`app/Http/Requests/IssueRequest.php`](file:///D:/MAGANG_2026/sertigenerator/app/Http/Requests/IssueRequest.php)
+  * Renderer PDF: [`app/Services/PdfRenderer.php`](file:///D:/MAGANG_2026/sertigenerator/app/Services/PdfRenderer.php)
+  * Audit Logger: [`app/Services/AuditLogger.php`](file:///D:/MAGANG_2026/sertigenerator/app/Services/AuditLogger.php)
+* **Aturan Bisnis & Logika Kritis (PRD 4.3, 4.4, 4.5 & Business Flow 3.10):**
+  1. **`IssueService::issue(array $data, User|int $user): array`:**
+     * Menjalankan seluruh proses di dalam transaksi database `DB::transaction()`.
+     * Mengunci baris kegiatan dengan `lockForUpdate()` untuk mencegah tabrakan alokasi nomor ganda pada request bersamaan.
+     * Mengalokasikan nomor jika kegiatan bernomor dan memvalidasi keunikan nomor urut.
+     * Membangun salinan data cetak JSON (`data_cetak`) yang disimpan permanen di tabel sertifikat.
+     * **Kaidah Atomik:** Render PDF dilakukan di dalam transaksi **sebelum commit**. Jika terjadi kegagalan render (misal out-of-memory TCPDF), transaksi otomatis di-*rollback*, data sertifikat tidak tersimpan, dan nomor urut tetap bebas.
+     * Mencatat jejak ke tabel `audit_logs`.
+     * Menghasilkan nama berkas aman sesuai PRD PD-10: `Sertifikat_{Jenis}_{NamaSafe}.pdf` (misal: `Mu'ammal Hamidy` $\rightarrow$ `Muammal_Hamidy`).
+  2. **`IssueService::preview(array $data): array`:**
+     * Menghasilkan contoh PDF ber-watermark `PRATINJAU` secara inline.
+     * Tidak menjalankan transaksi, tidak memotong kuota nomor urut, dan tidak menyimpan data ke database.
+  3. **Aksi Rute pada Controller (`IssueController`):**
+     * `POST /terbitkan` (Nama Rute: `issue.store`): Mengembalikan response download biner PDF langsung (`Content-Disposition: attachment`).
+     * `POST /pratinjau` (Nama Rute: `issue.preview`): Mengembalikan response tampilan PDF inline di tab baru (`Content-Disposition: inline`).
 
 ---
 
 ## 3. Hasil Pengujian Otomatis (*Automated Tests*)
 
-Pengujian dijalankan melalui `php artisan test`. Seluruh 38 pengujian berstatus **100% HIJAU (PASS)**.
+Pengujian dijalankan melalui `php artisan test`. Seluruh **44 pengujian berstatus 100% HIJAU (PASS) dengan 128 assertions**.
 
 ### A. Pengujian Unit Test (`tests/Unit/Services/`): 20 Tests, 47 Assertions
-* **`NumberGeneratorTest` (14 pengujian):** Lulus 100% seluruh kasus uji wajib PRD 5.3 (Kasus 1 s.d. 7, kode `35`, `15`, `23`, `255`, batas bulan Januari/Desember, parsing, dan proteksi input tidak valid).
-* **`RomanTest` (5 pengujian):** Lulus konversi bulan 1–12, konversi umum hingga 3999, serta penanganan exception angka di luar batas.
+* `NumberGeneratorTest` (14 tests) & `RomanTest` (5 tests): Lulus 100% kasus uji PRD 5.3.
 
 ### B. Pengujian Feature Alokasi Database (`tests/Feature/Services/NumberAllocatorTest.php`): 11 Tests, 25 Assertions
-* Lulus uji alokasi sekuensial, isolasi per seri/tahun/event, aturan sertifikat dibatalkan tidak terpakai ulang, dan penolakan duplikasi via *database unique constraint*.
+* Lulus uji alokasi sekuensial, isolasi nomor per seri/tahun/kegiatan, dan nomor batal tidak dipakai ulang.
 
-### C. Pengujian Feature API Form Penerbitan (`tests/Feature/Api/NumberSuggestTest.php`): 6 Tests, 24 Assertions
-1. `test_api_nomor_returns_suggestion_for_seminar`: API mengembalikan nomor usulan dan nomor lengkap yang valid.
-2. `test_api_nomor_increments_when_certificate_already_exists`: API otomatis menaikkan nomor urut jika sertifikat sebelumnya sudah terbit.
-3. `test_api_nomor_detects_manual_urut_availability`: API mendeteksi ketersediaan jika operator mengetik nomor urut manual (menandai `is_available: false` jika sudah ada yang memakai).
-4. `test_api_nomor_returns_null_fields_for_bootcamp`: API mengembalikan `bernomor: false` untuk kegiatan bootcamp.
-5. `test_api_nomor_validates_required_and_existing_event`: Validasi HTTP 422 jika `event_id` kosong atau tidak ada di database.
-6. `test_api_kegiatan_returns_list_and_filters`: API mengembalikan daftar kegiatan aktif dan menyaring berdasarkan jenis (`seminar`/`bootcamp`) dan pencarian (`q`).
+### C. Pengujian Feature API Form (`tests/Feature/Api/NumberSuggestTest.php`): 6 Tests, 24 Assertions
+* Lulus uji API nomor saran, deteksi nomor terpakai, dan filtering daftar kegiatan aktif.
+
+### D. Pengujian Feature Penerbitan Atomik (`tests/Feature/IssueCertificateTest.php`): 6 Tests, 31 Assertions
+1. `test_issue_seminar_certificate_success`: Penerbitan seminar sukses, nomor lengkap valid, download header sesuai, cert & audit log tersimpan.
+2. `test_issue_bootcamp_certificate_success`: Penerbitan bootcamp sukses, nomor `null`, data perusahaan & tanggal magang tersimpan di `data_cetak`.
+3. `test_preview_certificate_does_not_save_to_database`: Pratinjau memuat watermark `PRATINJAU` dan tidak menambah baris di database.
+4. `test_atomic_rollback_when_pdf_rendering_fails`: Simulasi render PDF gagal $\rightarrow$ transaksi di-rollback secara atomik (0 baris di `certificates`, nomor tetap bebas).
+5. `test_duplicate_manual_urut_is_rejected`: Penolakan nomor urut ganda jika diisi manual oleh operator.
+6. `test_validation_rejects_bootcamp_invalid_dates`: Validasi HTTP 422 jika tanggal selesai sebelum tanggal mulai.
 
 ---
 
@@ -134,22 +134,23 @@ Pengujian dijalankan melalui `php artisan test`. Seluruh 38 pengujian berstatus 
 
 | Rekan Tim | Titik Kolaborasi dengan Bima | Kontrak / Panduan Teknis |
 |---|---|---|
-| **Giska** (Frontend) | Form Penerbitan Dinamis | Giska kini dapat memanggil endpoint `GET /api/nomor` via `fetch()` di JavaScript form-nya. Setiap kali operator memilih kegiatan atau mengubah tanggal terbit, form memanggil endpoint ini dan langsung menampilkan `nomor_lengkap` dan `urut_saran` di panel ringkasan secara *realtime*. |
-| **Ifant** (PDF Generator) | Pemasangan Nomor di Template Seminar | Ifant mencetak string `nomor_lengkap` pada koordinat A4 Seminar: **X = 259 mm (Center)**, **Baseline Y = 77.2 mm**, font Serif ~10 pt. |
-| **Akmal** (Database & Admin) | Skema Tabel `events` & `certificates` | Skema yang dibuat Bima 100% identik dengan PRD 7.1. Pada transaksi penerbitan (Langkah 4), baris `events` dikunci dengan `lockForUpdate()`. |
+| **Giska** (Frontend) | Form Penerbitan Dinamis | • Panggil `GET /api/nomor` untuk saran nomor & preview string.<br>• Form `POST /terbitkan` mengirim data ke `issue.store` untuk langsung mengunduh PDF.<br>• Tombol Pratinjau mengirim data ke `POST /pratinjau` (`issue.preview`) untuk membuka PDF di tab baru. |
+| **Ifant** (PDF Generator) | Engine Rendering PDF | Kelas `App\Services\PdfRenderer` siap menerima integrasi layout TCPDF resmi dari Ifant. Method `render(Certificate $cert, string $mode)` menerima model sertifikat dan mode (`terbit`, `pratinjau`, `dibatalkan`). |
+| **Akmal** (Database & Admin) | Data Transaksi & Audit Log | Seluruh penerbitan tercatat di tabel `certificates` dan `audit_logs` dengan format data cetak JSON yang lengkap. |
 
 ---
 
-## 5. Rencana Langkah Berikutnya (Langkah 4)
+## 5. Rencana Langkah Berikutnya (Langkah 5)
 
 Tahap berikutnya yang akan dikerjakan oleh Bima:
-* **Langkah 4: Orkestrasi Penerbitan Atomik (`IssueService`) (Fase 6B)**
-  * Membuat Form Request `App\Http\Requests\IssueRequest` untuk validasi input penerbitan seminar dan bootcamp.
-  * Membangun service `App\Services\IssueService`:
-    * Eksekusi di dalam `DB::transaction()`.
-    * Penguncian baris kegiatan dengan `lockForUpdate()`.
-    * Generate nomor via `NumberAllocator` dan `NumberGenerator`.
-    * Simpan sertifikat dengan status `terbit`, salinan `data_cetak` JSON, dan `versi_layout`.
-    * Integrasi `PdfRenderer` sebelum transaksi commit (jika render gagal $\rightarrow$ rollback otomatis sehingga nomor tetap aman tidak terpakai).
-  * Menyediakan endpoint `POST /terbitkan` dan `POST /pratinjau`.
-  * Menulis Feature Test alur penerbitan seminar, bootcamp, dan uji atomik rollback.
+* **Langkah 5: Logika Unduh Ulang & Pembatalan Sertifikat (Fase 7 - Kontribusi Bima)**
+  * Membangun method unduh ulang (`HistoryController@download` / `HistoryService`):
+    * Membaca salinan `data_cetak` JSON dari baris sertifikat tersimpan.
+    * Me-render ulang PDF menggunakan versi layout yang tercatat pada saat terbit (identik visual 100%).
+    * Jika sertifikat berstatus `dibatalkan`, PDF otomatis memunculkan tanda air `DIBATALKAN`.
+  * Membangun aksi pembatalan (`HistoryController@cancel`):
+    * Rute: `POST /riwayat/{id}/batalkan` (Khusus Admin).
+    * Validasi alasan pembatalan (wajib diisi).
+    * Menandai status menjadi `dibatalkan`, mencatat ID admin pembatal, dan waktu pembatalan.
+    * Menjamin nomor batal tidak bisa diaktifkan kembali.
+  * Menulis Feature Test untuk unduh ulang dan pembatalan.

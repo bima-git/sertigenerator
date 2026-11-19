@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\IssueRequest;
 use App\Models\Event;
+use App\Models\User;
+use App\Services\IssueService;
 use App\Services\NumberAllocator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class IssueController extends Controller
 {
@@ -52,7 +56,6 @@ class IssueController extends Controller
 
     /**
      * Menghasilkan saran nomor urut dan pratinjau string nomor sertifikat lengkap secara dinamis.
-     * Digunakan oleh form frontend Giska untuk interaksi realtime saat kegiatan/tanggal dipilih.
      *
      * Rute: GET /api/nomor (Nama: api.number)
      */
@@ -78,5 +81,42 @@ class IssueController extends Controller
         );
 
         return response()->json($suggestion);
+    }
+
+    /**
+     * Menjalankan penerbitan sertifikat resmi secara atomik dan mengunduh berkas PDF.
+     *
+     * Rute: POST /terbitkan (Nama: issue.store)
+     */
+    public function store(IssueRequest $request, IssueService $issueService): Response
+    {
+        $user = $request->user() ?? User::query()->first() ?? User::create([
+            'name'     => 'Operator Cadangan',
+            'email'    => 'operator@xcode.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $result = $issueService->issue($request->validated(), $user);
+
+        return response($result['pdf'], 200, [
+            'Content-Type'         => 'application/pdf',
+            'Content-Disposition'  => "attachment; filename=\"{$result['filename']}\"",
+            'X-Certificate-Number' => $result['nomor'] ?? '',
+        ]);
+    }
+
+    /**
+     * Membuat pratinjau PDF ber-watermark PRATINJAU tanpa menyimpan ke database.
+     *
+     * Rute: POST /pratinjau (Nama: issue.preview)
+     */
+    public function preview(IssueRequest $request, IssueService $issueService): Response
+    {
+        $result = $issueService->preview($request->validated());
+
+        return response($result['pdf'], 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => "inline; filename=\"{$result['filename']}\"",
+        ]);
     }
 }
