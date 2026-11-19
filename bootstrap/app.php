@@ -13,9 +13,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['active' => \App\Http\Middleware\EnsureUserIsActive::class]);
         $middleware->redirectUsersTo('/terbitkan');
-        $middleware->validateCsrfTokens(except: [
-            'api/*',
-        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Nomor ganda adalah kesalahan isian, bukan galat server: tampilkan pesannya ke operator.
