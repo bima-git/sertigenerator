@@ -14,7 +14,6 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        // PRD AU-05: tanpa sesi, semua halaman mengarah ke Masuk.
-        $response->assertRedirect('/masuk');
+        $response->assertRedirect(route('login'));
     }
 }

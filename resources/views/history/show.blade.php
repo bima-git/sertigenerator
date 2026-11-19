@@ -7,6 +7,7 @@
         'judul_besar' => 'Judul besar', 'judul_kegiatan' => 'Judul pada sertifikat', 'bootcamp' => 'Bootcamp', 'program' => 'Program',
         'perusahaan' => 'Perusahaan penempatan', 'tanggal_mulai' => 'Tanggal mulai', 'tanggal_selesai' => 'Tanggal selesai',
         'kode' => 'Kode kegiatan', 'penerbit' => 'Penerbit', 'kota' => 'Kota terbit',
+        'tanggal_kota' => 'Kota dan tanggal', 'ujian' => 'Ujian', 'pakai_qr' => 'Pakai QR',
     ];
     $wide = ['judul_kegiatan', 'program', 'bootcamp'];
 @endphp
@@ -51,7 +52,7 @@
                     @continue($val === '' || $val === null)
                     <div class="{{ in_array($key, $wide) ? 'sm:col-span-2' : '' }}" data-reveal style="--i: {{ 3 + $loop->index }}">
                         <dt class="text-sm text-muted">{{ $labels[$key] ?? $key }}</dt>
-                        <dd class="mt-1 text-fg">{{ is_array($val) ? implode(', ', $val) : $val }}</dd>
+                        <dd class="mt-1 text-fg">{{ is_bool($val) ? ($val ? 'Ya' : 'Tidak') : (is_array($val) ? implode(', ', $val) : $val) }}</dd>
                     </div>
                 @endforeach
             </dl>

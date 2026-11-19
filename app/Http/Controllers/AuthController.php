@@ -2,90 +2,228 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoginRequest;
 use App\Models\User;
 use App\Services\AuditLogger;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
-/**
- * Masuk dan keluar (PRD AU-01 sampai AU-05, Design System 3.1 dan 3.2).
- */
 class AuthController extends Controller
 {
-    private const MAX_GAGAL = 5;      // AU-04: lima kegagalan berturut-turut
-    private const KUNCI_MENIT = 10;   // AU-04: dikunci 10 menit
+    public function __construct(
+        protected AuditLogger $auditLogger
+    ) {}
 
-    public function __construct(private AuditLogger $audit) {}
-
-    /** GET /masuk (login) */
-    public function create()
+    /**
+     * Menampilkan form login (GET /masuk).
+     */
+    public function create(): View|RedirectResponse
     {
+        if (Auth::check()) {
+            return redirect()->route('issue.store');
+        }
+
         return view('auth.login');
     }
 
-    /** POST /masuk (login.attempt), dibatasi throttle 10 per menit per IP di rute. */
-    public function store(Request $request): RedirectResponse
+    /**
+     * Memproses percobaan login (POST /masuk atau POST /api/login).
+     *
+     * Aturan Bisnis (PRD Section 4.1 & Design System Bagian 10):
+     * - AU-01: Verifikasi kata sandi dengan Hash::check
+     * - AU-03: Sesi diregenerasi via session()->regenerate()
+     * - AU-04: 5 kegagalan berturut-turut mengunci akun selama 10 menit
+     * - AU-05: Akun nonaktif tidak diizinkan masuk
+     * - AD-01: Pencatatan jejak audit (masuk, gagal_masuk)
+     */
+    public function store(LoginRequest $request): JsonResponse|RedirectResponse
     {
-        $data = $request->validate([
-            'username' => ['required', 'string', 'max:50'],
-            'password' => ['required', 'string'],
-        ], [
-            'username.required' => 'Username wajib diisi.',
-            'password.required' => 'Kata sandi wajib diisi.',
+        $username = $request->input('username');
+        $password = $request->input('password');
+
+        /** @var User|null $user */
+        $user = User::query()->where('username', $username)->first();
+
+        // 1. Periksa apakah akun sedang dalam masa penguncian (AU-04)
+        if ($user && $user->terkunci_sampai !== null) {
+            $lockExpiry = Carbon::parse($user->terkunci_sampai);
+            if ($lockExpiry->isFuture()) {
+                $sisaMenit = max(1, (int) ceil(now()->diffInSeconds($lockExpiry) / 60));
+
+                $this->auditLogger->log($user->id, 'gagal_masuk', null, [
+                    'alasan'     => 'Akun sedang terkunci',
+                    'sisa_menit' => $sisaMenit,
+                ]);
+
+                $errorMessage = "Terlalu banyak percobaan. Coba lagi dalam {$sisaMenit} menit.";
+
+                if ($request->expectsJson() || $request->is('api/*')) {
+                    return response()->json([
+                        'message' => $errorMessage,
+                        'errors'  => ['username' => [$errorMessage]],
+                    ], 429);
+                }
+
+                return back()->withErrors(['username' => $errorMessage])->withInput($request->only('username'));
+            }
+
+            // Masa kunci telah habis, reset counter
+            $user->update([
+                'gagal_login'     => 0,
+                'terkunci_sampai' => null,
+            ]);
+        }
+
+        // 2. Periksa kecocokan kredensial (AU-01)
+        if (! $user || ! Hash::check($password, $user->password)) {
+            if ($user) {
+                $user->increment('gagal_login');
+                $user->refresh();
+
+                // Kunci akun jika sudah mencapai 5 kali kegagalan
+                if ($user->gagal_login >= 5) {
+                    $user->update([
+                        'terkunci_sampai' => now()->addMinutes(10),
+                    ]);
+
+                    $this->auditLogger->log($user->id, 'gagal_masuk', null, [
+                        'alasan' => 'Akun terkunci karena 5 kali salah kata sandi',
+                    ]);
+
+                    $lockMessage = 'Terlalu banyak percobaan. Coba lagi dalam 10 menit.';
+
+                    if ($request->expectsJson() || $request->is('api/*')) {
+                        return response()->json([
+                            'message' => $lockMessage,
+                            'errors'  => ['username' => [$lockMessage]],
+                        ], 429);
+                    }
+
+                    return back()->withErrors(['username' => $lockMessage])->withInput($request->only('username'));
+                }
+
+                $this->auditLogger->log($user->id, 'gagal_masuk', null, [
+                    'alasan'      => 'Kata sandi salah',
+                    'percobaan_ke' => $user->gagal_login,
+                ]);
+            } else {
+                $this->auditLogger->log(null, 'gagal_masuk', null, [
+                    'username' => $username,
+                    'alasan'   => 'Username tidak terdaftar',
+                ]);
+            }
+
+            $errorMessage = 'Username atau kata sandi tidak cocok.';
+
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => $errorMessage,
+                    'errors'  => ['username' => [$errorMessage]],
+                ], 422);
+            }
+
+            return back()->withErrors(['username' => $errorMessage])->withInput($request->only('username'));
+        }
+
+        // 3. Periksa status keaktifan akun (AU-05)
+        if (! $user->aktif) {
+            $this->auditLogger->log($user->id, 'gagal_masuk', null, [
+                'alasan' => 'Akun dinonaktifkan',
+            ]);
+
+            $inactiveMessage = 'Akun Anda telah dinonaktifkan. Hubungi administrator.';
+
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => $inactiveMessage,
+                    'errors'  => ['username' => [$inactiveMessage]],
+                ], 403);
+            }
+
+            return back()->withErrors(['username' => $inactiveMessage])->withInput($request->only('username'));
+        }
+
+        // 4. Kredensial valid & akun aktif: Sukses login
+        $user->update([
+            'gagal_login'     => 0,
+            'terkunci_sampai' => null,
         ]);
 
-        $user = User::query()->where('username', $data['username'])->first();
-
-        if ($user?->terkunci_sampai?->isFuture()) {
-            $detik = (int) ceil(now()->diffInSeconds($user->terkunci_sampai));
-            throw ValidationException::withMessages([
-                'username' => 'Terlalu banyak percobaan. Coba lagi dalam '.max(1, (int) ceil($detik / 60)).' menit.',
-            ])->redirectTo(route('login'));
-        }
-
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
-            $this->recordFailure($user, $data['username']);
-            throw ValidationException::withMessages(['username' => 'Username atau kata sandi tidak cocok.'])
-                ->redirectTo(route('login'));
-        }
-
-        if (! $user->aktif) {
-            throw ValidationException::withMessages(['username' => 'Akun ini nonaktif. Hubungi admin.'])
-                ->redirectTo(route('login'));
-        }
-
-        $user->forceFill(['gagal_login' => 0, 'terkunci_sampai' => null])->save();
         Auth::login($user);
         $request->session()->regenerate();
-        $this->audit->log($user, 'masuk');
 
-        return redirect()->intended(route('issue.form'));
+        $this->auditLogger->log($user->id, 'masuk');
+
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success'  => true,
+                'message'  => 'Berhasil masuk.',
+                'user'     => [
+                    'id'       => $user->id,
+                    'username' => $user->username,
+                    'nama'     => $user->nama,
+                    'peran'    => $user->peran,
+                ],
+                'redirect' => '/terbitkan',
+            ]);
+        }
+
+        return redirect()->intended('/terbitkan');
     }
 
-    /** POST /keluar (logout) */
-    public function destroy(Request $request): RedirectResponse
+    /**
+     * Memproses logout (POST /keluar atau POST /api/logout).
+     *
+     * Aturan Bisnis (PRD Section 4.1 AU-02):
+     * - Menghapus sesi dan meregenerasi token CSRF
+     */
+    public function destroy(Request $request): JsonResponse|RedirectResponse
     {
+        $user = Auth::user();
+
+        if ($user) {
+            $this->auditLogger->log($user->id, 'keluar');
+        }
+
         Auth::logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')->with('status', 'Anda sudah keluar.');
-    }
-
-    private function recordFailure(?User $user, string $username): void
-    {
-        $this->audit->log($user, 'gagal_masuk', null, ['username' => $username]);
-
-        if (! $user) {
-            return;
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Berhasil keluar.',
+            ]);
         }
 
-        $gagal = $user->gagal_login + 1;
-        $user->forceFill($gagal >= self::MAX_GAGAL
-            ? ['gagal_login' => 0, 'terkunci_sampai' => now()->addMinutes(self::KUNCI_MENIT)]
-            : ['gagal_login' => $gagal])->save();
+        return redirect()->route('login');
+    }
+
+    /**
+     * Mengembalikan data pengguna yang sedang login saat ini (GET /api/me).
+     */
+    public function me(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        return response()->json([
+            'id'       => $user->id,
+            'username' => $user->username,
+            'nama'     => $user->nama,
+            'peran'    => $user->peran,
+            'aktif'    => (bool) $user->aktif,
+        ]);
     }
 }

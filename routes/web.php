@@ -12,6 +12,16 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
+| Autentikasi (AuthController modul Bima, PRD 4.1, Design System 3.1 - 3.2)
+|--------------------------------------------------------------------------
+*/
+// REST API login (tanpa CSRF via pengecualian api/*); /api/me menjawab 401 sendiri bila belum masuk.
+Route::post('/api/login', [AuthController::class, 'store'])->middleware('throttle:10,1')->name('api.login');
+Route::post('/api/logout', [AuthController::class, 'destroy'])->name('api.logout');
+Route::get('/api/me', [AuthController::class, 'me'])->name('api.me');
+
+/*
+|--------------------------------------------------------------------------
 | Halaman (modul Giska) dan aksi penerbitan (modul Bima)
 |--------------------------------------------------------------------------
 | Nama rute mengikuti Design System bagian 3. Halaman admin masih closure

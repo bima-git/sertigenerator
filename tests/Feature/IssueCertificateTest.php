@@ -135,12 +135,36 @@ class IssueCertificateTest extends TestCase
         $response->assertOk();
         $response->assertHeader('Content-Disposition', 'inline; filename="Pratinjau_Sertifikat.pdf"');
 
-        // Pastikan konten PDF memuat watermark PRATINJAU
-        $this->assertStringContainsString('PRATINJAU', $response->getContent());
+        // Pastikan konten PDF memuat watermark PRATINJAU (mendukung plain text maupun compressed TCPDF stream)
+        $this->assertPdfContainsText('PRATINJAU', $response->getContent());
 
         // Pastikan tidak ada data yang tersimpan dan audit log kosong
         $this->assertDatabaseCount('certificates', 0);
         $this->assertDatabaseCount('audit_logs', 0);
+    }
+
+    /**
+     * Memeriksa apakah teks terdapat dalam PDF, baik pada stream teks biasa maupun compressed stream zlib TCPDF.
+     */
+    private function assertPdfContainsText(string $needle, string $pdfContent): void
+    {
+        if (str_contains($pdfContent, $needle)) {
+            $this->assertTrue(true);
+            return;
+        }
+
+        $found = false;
+        if (preg_match_all('/stream[\r\n]+(.*?)[\r\n]+endstream/s', $pdfContent, $matches)) {
+            foreach ($matches[1] as $stream) {
+                $decompressed = @gzuncompress(trim($stream));
+                if ($decompressed !== false && str_contains($decompressed, $needle)) {
+                    $found = true;
+                    break;
+                }
+            }
+        }
+
+        $this->assertTrue($found, "PDF tidak memuat teks '{$needle}' (diuji baik raw maupun stream terdekompresi).");
     }
 
     /**

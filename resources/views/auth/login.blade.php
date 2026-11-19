@@ -48,7 +48,7 @@
             </div>
 
             <h2 id="login-title" class="mt-7 text-[22px] font-semibold">Masuk ke Sistem</h2>
-            <p class="mt-1 text-sm text-body">Masukkan username dan kata sandi untuk mengakses Generator Sertifikat.</p>
+            <p class="mt-1 text-sm text-body">Masukkan username dan kata sandi untuk mengakses Sistem Sertifikat XCODE.</p>
 
             @if (session('status'))
                 <div class="alert alert-info mt-5" role="status"><i class="ph-fill ph-info"></i><span>{{ session('status') }}</span></div>

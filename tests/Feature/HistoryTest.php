@@ -138,8 +138,32 @@ class HistoryTest extends TestCase
 
         $response->assertOk();
 
-        // Pastikan konten PDF menyematkan watermark DIBATALKAN
-        $this->assertStringContainsString('DIBATALKAN', $response->getContent());
+        // Pastikan konten PDF menyematkan watermark DIBATALKAN (mendukung plain text maupun compressed TCPDF stream)
+        $this->assertPdfContainsText('DIBATALKAN', $response->getContent());
+    }
+
+    /**
+     * Memeriksa apakah teks terdapat dalam PDF, baik pada stream teks biasa maupun compressed stream zlib TCPDF.
+     */
+    private function assertPdfContainsText(string $needle, string $pdfContent): void
+    {
+        if (str_contains($pdfContent, $needle)) {
+            $this->assertTrue(true);
+            return;
+        }
+
+        $found = false;
+        if (preg_match_all('/stream[\r\n]+(.*?)[\r\n]+endstream/s', $pdfContent, $matches)) {
+            foreach ($matches[1] as $stream) {
+                $decompressed = @gzuncompress(trim($stream));
+                if ($decompressed !== false && str_contains($decompressed, $needle)) {
+                    $found = true;
+                    break;
+                }
+            }
+        }
+
+        $this->assertTrue($found, "PDF tidak memuat teks '{$needle}' (diuji baik raw maupun stream terdekompresi).");
     }
 
     /**
