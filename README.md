@@ -1,3 +1,60 @@
+# Generator Sertifikat XCODE
+
+Aplikasi Laravel 12 untuk menerbitkan sertifikat seminar dan bootcamp XCODE Training, dengan keluaran PDF A4 mendatar.
+
+## Dependensi PDF: TCPDF dikunci di `^6.9`
+
+`composer.json` memakai `"tecnickcom/tcpdf": "^6.9"` (terpasang 6.11.4) dan **sengaja tidak dibiarkan naik ke 7.x**. Jangan longgarkan pin ini tanpa menyelesaikan tiga hal berikut:
+
+1. **Aset font tidak lagi dibundel.** TCPDF 7 memindahkan seluruh font ke `tecnickcom/tc-lib-pdf-font`, yang harus dibangun lebih dulu dengan `make fonts`. Akibatnya render gagal dengan `Com\Tecnick\Pdf\Font\Exception: unable to read file: helvetica.json` pada instalasi bersih, dan mesin pengembangan Windows di proyek ini tidak punya `make`.
+2. **`addTTFfont` dihapus.** Dokumen desain memakai `addTTFfont` untuk membenamkan Tinos/Liberation Serif sebagai pengganti sementara font asli sertifikat. Di 7.x font hanya bisa dimasukkan lewat importer `tc-lib-pdf-font`.
+3. **Font `.php`/`.z` tidak didukung lagi.** `K_PATH_FONTS` dan definisi font gaya lama yang dirujuk Design System bagian 9.1/9.8 tidak berlaku di 7.x.
+
+Bila `vendor/` hilang, cukup jalankan `composer install`; versi terkunci sudah tersimpan di `composer.lock`. Bila suatu saat memang harus pindah ke TCPDF 7, siapkan `make` di semua mesin dan runner CI, jalankan `make -C vendor/tecnickcom/tc-lib-pdf-font deps fonts`, lalu ganti mekanisme pemuatan font sebelum memperbarui pin.
+
+## Font sertifikat
+
+Font asli sertifikat dimasukkan lewat TCPDF `addTTFfont`, bukan dibaca langsung sebagai TTF. Letakkan berkas `.ttf` di `assets/fonts`, lalu jalankan:
+
+```bash
+php artisan certificates:import-fonts --download   # unduh Tinos, PinyonScript, Poppins (OFL)
+php artisan certificates:import-fonts              # impor dari assets/fonts
+```
+
+Hasilnya berupa definisi `.php`/`.z` di `storage/app/fonts` (tidak masuk git, jadi jalankan ulang setelah clone baru). Nama keluarga mengikuti aturan TCPDF: `Tinos-Regular.ttf` menjadi `tinos`, `Tinos-Bold.ttf` menjadi `tinosb`, `PinyonScript-Regular.ttf` menjadi `pinyonscript`, `Poppins-Regular.ttf` menjadi `poppins`. Nama itulah yang dirujuk `config/layout/*.php`. Selama berkasnya belum ada, renderer kembali ke `times` dan mencatat peringatan.
+
+## Aset desain
+
+Tampilan mengikuti sampel `Syafrizal Devan Pradana.pdf`. Berkas yang dipakai ada di `assets/templates`:
+
+- `background.png` — latar geometris A4 mendatar (1400x990), digambar penuh halaman.
+- `logo.png` — pita merah + lingkaran logo XCODE, latar transparan, diletakkan mulai `x 210`, `y 0` dengan ukuran 75 x 62,5 mm.
+- `signature.png` — tanda tangan dengan latar transparan; ganti berkas ini bila penanda tangan berganti.
+
+Logo dan tanda tangan diekstrak dari sampel sehingga posisinya sudah sama. Selain itu ada elemen `type: line` untuk garis dekoratif: `garis_nama` (bawah nama peserta) dan `garis_tanda_tangan`, dengan `w` (panjang) dan `tebal` dalam mm. Koordinat `y` teks adalah garis dasar (baseline) hasil kalibrasi terhadap sampel.
+
+## Garis bantu kalibrasi
+
+Untuk mencocokkan latar asli dengan teks, cetak sampel dengan garis bantu 10 mm dan penanda koordinat setiap elemen:
+
+```bash
+php artisan certificates:make-samples --guides --output=storage/app/samples
+```
+
+Setiap elemen diberi tanda silang biru di titik jangkar (`x`, `y`), label nama dan koordinatnya, serta kotak hijau untuk elemen gambar.
+
+## Pratinjau di browser
+
+Jalankan server lalu buka `http://127.0.0.1:8000/pratinjau`:
+
+```bash
+php artisan serve
+```
+
+Halaman ini menampilkan PDF langsung di dalam iframe dengan data contoh. Pilihan yang tersedia: jenis layout (`seminar`/`bootcamp`), peserta contoh, mode (`terbit`/`pratinjau`/`dibatalkan`), dan garis bantu kalibrasi.
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
