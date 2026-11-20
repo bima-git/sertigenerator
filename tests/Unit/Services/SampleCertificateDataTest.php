@@ -17,10 +17,12 @@ final class SampleCertificateDataTest extends TestCase
         $samples = $this->samples(new DateTimeImmutable('2026-10-24 10:00:00'));
 
         $this->assertSame([
-            '35/001/003/Xcodetraining/X/2026',
-            '35/001/009/Xcodetraining/X/2026',
-            '35/001/015/Xcodetraining/X/2026',
+            '23/001/003/SiberExpert/X/2026',
+            '23/001/009/SiberExpert/X/2026',
+            '23/001/015/SiberExpert/X/2026',
         ], array_column(array_column($samples, 'data'), 'nomor_lengkap'));
+
+        $this->assertSame('Webinar Siber Expert Asia', $samples[0]['data']['judul_cetak']);
 
         $this->assertSame('Yogyakarta, 24 Oktober 2026', $samples[0]['data']['tanggal_kota']);
     }
@@ -29,9 +31,9 @@ final class SampleCertificateDataTest extends TestCase
     {
         $samples = $this->samples(new DateTimeImmutable('2026-11-13 10:00:00'));
 
-        $this->assertSame('35/001/003/Xcodetraining/XI/2026', $samples[0]['data']['nomor_lengkap']);
+        $this->assertSame('23/001/003/SiberExpert/XI/2026', $samples[0]['data']['nomor_lengkap']);
         $this->assertSame(
-            NumberGenerator::build('35', 1, 3, 'Xcodetraining', '2026-11-13'),
+            NumberGenerator::build('23', 1, 3, 'SiberExpert', '2026-11-13'),
             $samples[0]['data']['nomor_lengkap'],
         );
         $this->assertSame('Yogyakarta, 13 November 2026', $samples[0]['data']['tanggal_kota']);

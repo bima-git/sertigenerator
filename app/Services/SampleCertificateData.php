@@ -18,17 +18,18 @@ final class SampleCertificateData
     ) {}
 
     /**
-     * Nomor contoh dibangun NumberGenerator agar bentuknya sama dengan contoh
-     * resmi `35/001/003/Xcodetraining/X/2026`; bulan dan tahun ikut tanggal terbit,
-     * jadi tidak bisa menyimpang saat tanggal sampel diganti.
+     * Nomor contoh memakai kegiatan yang tercatat di panduan "KODE SERTIFIKAT XCODE":
+     * kode 23 (Webinar Siber Expert Asia) dengan penerbit SiberExpert, seperti contoh
+     * `23/001/001/SiberExpert/V/2024`. Bulan dan tahun ikut tanggal terbit, jadi tidak
+     * bisa menyimpang saat tanggal sampel diganti.
      *
      * @return list<array{jenis: string, berkas: string, data: array<string, string>}>
      */
     public function samples(DateTimeInterface $tanggalTerbit, string $kota = 'Yogyakarta'): array
     {
         $tanggal = $this->dates->formatWithCity($kota, $tanggalTerbit);
-        $judul = 'Koding Laravel: 20x Lebih Cepat dengan Hermes AI';
-        $nomor = fn (int $urut): string => NumberGenerator::build('35', 1, $urut, 'Xcodetraining', $tanggalTerbit);
+        $judul = 'Webinar Siber Expert Asia';
+        $nomor = fn (int $urut): string => NumberGenerator::build('23', 1, $urut, 'SiberExpert', $tanggalTerbit);
 
         return [
             [

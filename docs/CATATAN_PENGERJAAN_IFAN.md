@@ -283,7 +283,7 @@ Catatan:
 |---|---|
 | `php artisan certificates:make-samples [--output=] [--mode=] [--jenis=] [--guides]` | Cetak 3 sampel seminar + 1 bootcamp dengan data contoh tanggal 24 Oktober 2026 |
 
-Nomor contoh (`35/001/003/Xcodetraining/X/2026`) dibangun `NumberGenerator`, bukan string hardcode, sehingga bulan dan tahun ikut tanggal terbit seperti contoh resmi. Nomor asli sertifikat tetap dibuat `IssueService`/`NumberGenerator` milik Bima.
+Nomor contoh memakai kegiatan dari panduan "KODE SERTIFIKAT XCODE": kode 23, penerbit SiberExpert, judul Webinar Siber Expert Asia, sehingga tampil `23/001/003/SiberExpert/X/2026`. Nomornya dibangun `NumberGenerator`, bukan string hardcode, sehingga bulan dan tahun ikut tanggal terbit seperti contoh `23/001/001/SiberExpert/V/2024`. Nomor asli sertifikat tetap dibuat `IssueService`/`NumberGenerator` milik Bima.
 | `php artisan certificates:import-fonts [--download] [--source=] [--output=] [--force]` | Impor font ke `storage/app/fonts` |
 
 Pengaturan di `config/certificate.php`:

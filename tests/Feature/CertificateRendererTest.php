@@ -76,6 +76,18 @@ final class CertificateRendererTest extends TestCase
         $this->assertGreaterThan(200, substr_count($this->uncompressed($pdf), ' re'));
     }
 
+    public function test_qr_is_skipped_when_pakai_qr_false(): void
+    {
+        $pdf = $this->renderer->render(
+            'seminar',
+            $this->seminarData() + ['pakai_qr' => false],
+            withBackground: false,
+        );
+
+        // Barcode QR adalah satu-satunya sumber operator "re" dalam jumlah besar.
+        $this->assertSame(0, substr_count($this->uncompressed($pdf), ' re'));
+    }
+
     public function test_guides_add_grid_and_element_markers(): void
     {
         $pdf = $this->renderer->render(
