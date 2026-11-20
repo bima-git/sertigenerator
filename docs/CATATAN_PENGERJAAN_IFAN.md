@@ -297,7 +297,7 @@ Metadata PDF: `SetSubject('Status dokumen: TERBIT|PRATINJAU|DIBATALKAN')` disimp
 
 **Ke Bima (penerbitan & riwayat):** jangan panggil `CertificateRenderer` langsung. Gunakan `App\Services\PdfRenderer::render(Certificate $certificate, string $mode = 'terbit')`. Renderer memilih layout dari `versi_layout` sertifikat, jadi unduh ulang otomatis mengikuti versi saat terbit.
 
-**Ke Giska (frontend):** pratinjau di browser memakai `GET /pratinjau` (halaman) dan `GET /pratinjau/pdf?jenis=&sampel=&mode=&guides=` (PDF inline). Tombol pratinjau pada form penerbitan tetap memakai `POST /pratinjau` milik Bima (`issue.preview`) karena memakai data form, bukan data contoh.
+**Ke Giska (frontend):** pratinjau di browser memakai `GET /pratinjau` (halaman) dan `GET /pratinjau/pdf?jenis=&sampel=&mode=&guides=` (PDF inline). Keduanya berada di dalam grup `auth` + `active` seperti halaman lain, dan halaman memakai shell `layouts.app` (sidebar, komponen `x-page-header`, `card`, `select.input`, `switch`, `badge`, `btn`). Tombol pratinjau pada form penerbitan tetap memakai `POST /pratinjau` milik Bima (`issue.preview`) karena memakai data form, bukan data contoh.
 
 **Batasan kontrak data:** event seminar dengan `bernomor = false` akan gagal render karena elemen `nomor` wajib ada; keputusan apakah seminar boleh tanpa nomor masih menunggu konfirmasi coach.
 
@@ -324,5 +324,5 @@ Perintah: `php artisan test --filter='CertificateRendererTest|LayoutConfigTest'`
 1. **Seminar tanpa nomor** — `RenderException` saat `bernomor = false`; perlu keputusan coach.
 2. **Tujuan QR** — saat ini `https://xcode.co.id/cekkodesertifikat` (mode `static`); alamat final belum dikonfirmasi.
 3. **Contoh asli tidak masuk repo** — empat PDF contoh ada di root dan belum di-commit, sehingga kalibrasi belum bisa diuji otomatis di CI.
-4. **Halaman pratinjau** — masih halaman mandiri dengan CSS inline, belum memakai komponen UI `layouts.app` milik main; penyesuaian tampilan diserahkan ke Giska.
+4. **Halaman pratinjau wajib login** — sudah memakai shell `layouts.app`, sehingga tidak bisa dibuka tanpa sesi. Bila nanti perlu diakses publik, buat layout tamu terpisah, bukan melonggarkan grup `auth`.
 5. **Font sumber** — `.ttf` tidak dibundel; setiap mesin/runner baru wajib menjalankan `certificates:import-fonts --download` sebelum render final.

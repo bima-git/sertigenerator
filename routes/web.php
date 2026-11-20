@@ -77,7 +77,6 @@ Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function 
     ]))->name('audit');
     Route::view('/uji-layout', 'admin.layout-test')->name('layout.test');
 });
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -87,3 +86,4 @@ Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function 
 */
 Route::get('/pratinjau', [CertificatePreviewController::class, 'index'])->name('pratinjau');
 Route::get('/pratinjau/pdf', [CertificatePreviewController::class, 'pdf'])->name('pratinjau.pdf');
+});
