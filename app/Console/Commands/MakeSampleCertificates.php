@@ -7,7 +7,6 @@ namespace App\Console\Commands;
 use App\Enums\CertificateMode;
 use App\Exceptions\RenderException;
 use App\Pdf\CertificateRenderer;
-use App\Services\DateId;
 use App\Services\SampleCertificateData;
 use DateTimeImmutable;
 use Illuminate\Console\Command;
@@ -23,7 +22,7 @@ final class MakeSampleCertificates extends Command
 
     protected $description = 'Membuat PDF sampel untuk kalibrasi layout sertifikat';
 
-    public function handle(CertificateRenderer $renderer, DateId $dates, SampleCertificateData $samples): int
+    public function handle(CertificateRenderer $renderer, SampleCertificateData $samples): int
     {
         try {
             $mode = CertificateMode::fromInput((string) $this->option('mode'));
@@ -43,8 +42,6 @@ final class MakeSampleCertificates extends Command
             return self::FAILURE;
         }
 
-        $tanggal = $dates->formatWithCity('Yogyakarta', new DateTimeImmutable('2026-10-24 10:00:00'));
-
         $background = base_path((string) config('layout.seminar.background'));
         $withBackground = is_file($background);
 
@@ -52,7 +49,7 @@ final class MakeSampleCertificates extends Command
             $this->warn('Gambar latar belum tersedia. PDF dibuat tanpa latar; koordinat teks tetap bisa diperiksa.');
         }
 
-        $samples = $samples->samples($tanggal);
+        $samples = $samples->samples(new DateTimeImmutable('2026-10-24 10:00:00'));
 
         if ($jenis !== '') {
             $samples = array_values(array_filter(

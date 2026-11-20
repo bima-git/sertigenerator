@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use DateTimeInterface;
+
 /**
  * Data contoh untuk kalibrasi dan pratinjau layout (Design System 9.9 dan
  * contoh nomor pada PRD). Dipakai perintah certificates:make-samples dan
@@ -11,13 +13,22 @@ namespace App\Services;
  */
 final class SampleCertificateData
 {
+    public function __construct(
+        private readonly DateId $dates,
+    ) {}
+
     /**
+     * Nomor contoh dibangun NumberGenerator agar bentuknya sama dengan contoh
+     * resmi `35/001/003/Xcodetraining/X/2026`; bulan dan tahun ikut tanggal terbit,
+     * jadi tidak bisa menyimpang saat tanggal sampel diganti.
+     *
      * @return list<array{jenis: string, berkas: string, data: array<string, string>}>
      */
-    public function samples(string $tanggal): array
+    public function samples(DateTimeInterface $tanggalTerbit, string $kota = 'Yogyakarta'): array
     {
+        $tanggal = $this->dates->formatWithCity($kota, $tanggalTerbit);
         $judul = 'Koding Laravel: 20x Lebih Cepat dengan Hermes AI';
-        $nomor = fn (int $urut): string => sprintf('35/001/%03d/Xcodetraining/X/2026', $urut);
+        $nomor = fn (int $urut): string => NumberGenerator::build('35', 1, $urut, 'Xcodetraining', $tanggalTerbit);
 
         return [
             [

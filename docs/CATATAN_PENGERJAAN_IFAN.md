@@ -219,6 +219,8 @@ php artisan certificates:make-samples --output=storage/app/kalibrasi --mode=terb
 
 ### Hasil Kalibrasi 20 November 2026
 
+> PDF contoh asli sudah dihapus dari root pada 20 November 2026 atas permintaan pemilik proyek. Hasil ukur di bawah tetap berlaku sebagai catatan; tangkapan raster tersimpan lokal di `storage/app/kalibrasi/asli-*.png` (tidak masuk git). Mengulang kalibrasi memerlukan contoh baru.
+
 Seminar (`Ridla Dratistiwa.pdf`, `Syafrizal Devan Pradana.pdf`) sudah tepat, selisih baseline ≤ 0,02 pt:
 
 | Elemen | Contoh | Generator |
@@ -280,6 +282,8 @@ Catatan:
 | Perintah | Fungsi |
 |---|---|
 | `php artisan certificates:make-samples [--output=] [--mode=] [--jenis=] [--guides]` | Cetak 3 sampel seminar + 1 bootcamp dengan data contoh tanggal 24 Oktober 2026 |
+
+Nomor contoh (`35/001/003/Xcodetraining/X/2026`) dibangun `NumberGenerator`, bukan string hardcode, sehingga bulan dan tahun ikut tanggal terbit seperti contoh resmi. Nomor asli sertifikat tetap dibuat `IssueService`/`NumberGenerator` milik Bima.
 | `php artisan certificates:import-fonts [--download] [--source=] [--output=] [--force]` | Impor font ke `storage/app/fonts` |
 
 Pengaturan di `config/certificate.php`:
@@ -313,6 +317,7 @@ Metadata PDF: `SetTitle('Sertifikat {jenis} - {nama peserta} ({mode})')` memenuh
 | `tests/Unit/Services/LayoutConfigTest.php` | Validasi layout, pemilihan versi arsip, fallback, font penanda tangan, versi arsip |
 | `tests/Unit/Pdf/CertificateDataMapperTest.php` | Pemetaan Certificate → data layout |
 | `tests/Unit/Services/TextFitterTest.php` | Pengecilan font & pemecahan baris nama panjang |
+| `tests/Unit/Services/SampleCertificateDataTest.php` | Nomor contoh seminar mengikuti `NumberGenerator` dan bulan/tahun mengikuti tanggal terbit |
 | `tests/Feature/CertificatePreviewTest.php` | Halaman & endpoint PDF pratinjau |
 | `tests/Feature/MakeSampleCertificatesCommandTest.php` | Perintah sampel |
 | `tests/Feature/ImportFontsCommandTest.php` | Perintah impor font |
@@ -326,6 +331,6 @@ Perintah: `php artisan test --filter='CertificateRendererTest|LayoutConfigTest'`
 1. **Seminar tanpa nomor** — `RenderException` saat `bernomor = false`; perlu keputusan coach.
 2. **Tujuan QR** — sudah diputuskan satu alamat untuk semua sertifikat, `https://xcode.co.id/cekkodesertifikat`; mode per nomor dihapus dari konfigurasi.
 3. **Watermark** — teksnya sudah bebas lewat konfigurasi atau parameter render, tetapi ukuran/warna/alpha masih perkiraan `[KALIBRASI]` terhadap contoh asli.
-4. **Contoh asli tidak masuk repo** — empat PDF contoh ada di root dan belum di-commit, sehingga kalibrasi belum bisa diuji otomatis di CI.
+4. **Contoh asli sudah dihapus** — lima PDF contoh di root dihapus atas permintaan pemilik, sehingga kalibrasi hanya tercatat di dokumen ini (plus PNG raster lokal) dan tidak bisa diuji otomatis di CI.
 5. **Halaman pratinjau wajib login** — sudah memakai shell `layouts.app`, sehingga tidak bisa dibuka tanpa sesi. Bila nanti perlu diakses publik, buat layout tamu terpisah, bukan melonggarkan grup `auth`.
 6. **Font sumber** — `.ttf` tidak dibundel; setiap mesin/runner baru wajib menjalankan `certificates:import-fonts --download` sebelum render final.
