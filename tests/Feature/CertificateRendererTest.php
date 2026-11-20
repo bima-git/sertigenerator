@@ -49,6 +49,15 @@ final class CertificateRendererTest extends TestCase
         $this->assertStringContainsString('Yogyakarta, 24 Oktober 2026', $teks);
     }
 
+    public function test_pdf_title_metadata_contains_participant_name(): void
+    {
+        $judul = $this->titleOf($this->renderer->render('seminar', $this->seminarData(), withBackground: false));
+
+        $this->assertStringContainsString('Arief Soekardi', $judul);
+        $this->assertStringContainsString('Sertifikat seminar', $judul);
+        $this->assertStringContainsString('Terbit', $judul);
+    }
+
     public function test_renders_seminar_fixed_elements(): void
     {
         $teks = $this->textOf($this->renderer->render('seminar', $this->seminarData(), withBackground: false));
@@ -65,6 +74,18 @@ final class CertificateRendererTest extends TestCase
         $pdf = $this->renderer->render('seminar', $this->seminarData(), withBackground: false);
 
         $this->assertGreaterThan(200, substr_count($this->uncompressed($pdf), ' re'));
+    }
+
+    public function test_qr_is_skipped_when_pakai_qr_false(): void
+    {
+        $pdf = $this->renderer->render(
+            'seminar',
+            $this->seminarData() + ['pakai_qr' => false],
+            withBackground: false,
+        );
+
+        // Barcode QR adalah satu-satunya sumber operator "re" dalam jumlah besar.
+        $this->assertSame(0, substr_count($this->uncompressed($pdf), ' re'));
     }
 
     public function test_guides_add_grid_and_element_markers(): void
@@ -87,6 +108,25 @@ final class CertificateRendererTest extends TestCase
         $pdf = $this->renderer->render('seminar', $this->seminarData(), withBackground: false);
 
         $this->assertSame(1, preg_match_all('/\/Type \/Page\b/', $pdf));
+    }
+
+    public function test_long_name_and_event_title_stay_on_one_page(): void
+    {
+        // Nama 70 karakter dan judul 111 karakter memaksa pengecilan font lalu
+        // pemecahan dua baris; keduanya harus tetap muat tanpa lembar tambahan.
+        $pdf = $this->renderer->render('seminar', [
+            'nama_peserta' => 'Raden Mas Muhammad Syafrizal Devan Pradana Hidayatullah Kusumawardhana',
+            'judul_cetak' => 'Membangun Aplikasi Web Modern dengan Laravel, React, dan Kecerdasan Buatan untuk Meningkatkan Produktivitas Tim',
+            'nomor_lengkap' => '35/001/003/Xcodetraining/X/2026',
+            'tanggal_kota' => 'Yogyakarta, 24 Oktober 2026',
+        ], withBackground: false);
+
+        $this->assertSame(1, preg_match_all('/\/Type \/Page\b/', $pdf));
+
+        $teks = $this->textOf($pdf);
+
+        $this->assertStringContainsString('Kusumawardhana', $teks);
+        $this->assertStringContainsString('Produktivitas Tim', $teks);
     }
 
     public function test_writes_pdf_to_file(): void
@@ -167,6 +207,45 @@ final class CertificateRendererTest extends TestCase
         $this->assertStringContainsString('DIBATALKAN', $teks);
     }
 
+    public function test_custom_watermark_replaces_mode_default_text(): void
+    {
+        $teks = $this->textOf($this->renderer->render(
+            'seminar',
+            $this->seminarData(),
+            CertificateMode::Pratinjau,
+            withBackground: false,
+            watermarkText: 'SALINAN ARSIP',
+        ));
+
+        $this->assertStringContainsString('SALINAN ARSIP', $teks);
+        $this->assertStringNotContainsString('PRATINJAU', $teks);
+    }
+
+    public function test_custom_watermark_can_mark_terbit_mode(): void
+    {
+        $teks = $this->textOf($this->renderer->render(
+            'seminar',
+            $this->seminarData(),
+            withBackground: false,
+            watermarkText: 'SALINAN',
+        ));
+
+        $this->assertStringContainsString('SALINAN', $teks);
+    }
+
+    public function test_blank_custom_watermark_keeps_mode_default(): void
+    {
+        $teks = $this->textOf($this->renderer->render(
+            'seminar',
+            $this->seminarData(),
+            CertificateMode::Pratinjau,
+            withBackground: false,
+            watermarkText: '   ',
+        ));
+
+        $this->assertStringContainsString('PRATINJAU', $teks);
+    }
+
     public function test_renders_bootcamp_paragraph_from_template(): void
     {
         $pdf = $this->renderer->render('bootcamp', [
@@ -234,6 +313,23 @@ final class CertificateRendererTest extends TestCase
             'nomor_lengkap' => '35/001/003/Xcodetraining/X/2026',
             'tanggal_kota' => 'Yogyakarta, 24 Oktober 2026',
         ];
+    }
+
+    /**
+     * Mengambil entri /Title dari information dictionary, bukan dari teks isi halaman.
+     */
+    private function titleOf(string $pdf): string
+    {
+        preg_match('/\/Title\s*\((.*?)\)\s*\/(?:Subject|Author|Creator|Producer)/s', $pdf, $cocok);
+
+        $judul = str_replace(['\\(', '\\)'], ['(', ')'], $cocok[1] ?? '');
+
+        // TCPDF menulis metadata sebagai UTF-16BE ber-BOM, bukan ASCII.
+        if (str_starts_with($judul, "\xFE\xFF")) {
+            $judul = mb_convert_encoding(substr($judul, 2), 'UTF-8', 'UTF-16BE');
+        }
+
+        return $judul;
     }
 
     private function uncompressed(string $pdf): string

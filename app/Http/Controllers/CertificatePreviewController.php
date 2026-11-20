@@ -6,7 +6,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\CertificateMode;
 use App\Pdf\CertificateRenderer;
-use App\Services\DateId;
 use App\Services\SampleCertificateData;
 use DateTimeImmutable;
 use Illuminate\Http\Request;
@@ -22,9 +21,8 @@ final class CertificatePreviewController extends Controller
     public function index(
         Request $request,
         SampleCertificateData $samples,
-        DateId $dates,
     ): View {
-        $semua = $samples->samples($this->tanggal($dates));
+        $semua = $samples->samples($this->tanggalTerbit());
         [$jenis, $sampel, $mode, $guides] = $this->pilihan($request, $semua);
 
         return view('pratinjau', [
@@ -51,9 +49,8 @@ final class CertificatePreviewController extends Controller
         Request $request,
         CertificateRenderer $renderer,
         SampleCertificateData $samples,
-        DateId $dates,
     ): Response {
-        $semua = $samples->samples($this->tanggal($dates));
+        $semua = $samples->samples($this->tanggalTerbit());
         [$jenis, $sampel, $mode, $guides] = $this->pilihan($request, $semua);
 
         $isi = $renderer->render(
@@ -72,9 +69,9 @@ final class CertificatePreviewController extends Controller
         ]);
     }
 
-    private function tanggal(DateId $dates): string
+    private function tanggalTerbit(): DateTimeImmutable
     {
-        return $dates->formatWithCity('Yogyakarta', new DateTimeImmutable('2026-10-24 10:00:00'));
+        return new DateTimeImmutable('2026-10-24 10:00:00');
     }
 
     /**

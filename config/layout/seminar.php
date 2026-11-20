@@ -7,7 +7,8 @@ declare(strict_types=1);
  * Versi 1.2: pita logo, garis bawah nama, dan garis tanda tangan diambil dari
  * sampel asli "Syafrizal Devan Pradana.pdf". Versi 1.1: koordinat diukur dari
  * sampel itu (halaman 297,13 x 210,08 mm).
- * QR aktif dan posisinya diatur di elemen 'qr'; hapus elemen itu bila tidak dicetak.
+ * QR digambar dari elemen 'qr'; tampil atau tidaknya ditentukan data event `pakai_qr`,
+ * bukan dengan menghapus elemen, agar posisinya tetap satu sumber.
  * Setiap perubahan koordinat wajib menaikkan "versi" dan mengarsipkan berkas lama.
  */
 return [

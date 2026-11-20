@@ -36,10 +36,11 @@ final class CertificateRenderer
         ?string $backgroundPath = null,
         bool $withGuides = false,
         ?string $versiLayout = null,
+        ?string $watermarkText = null,
     ): string {
         $layout = $this->layouts->get($jenis, $versiLayout);
 
-        $pdf = $this->newDocument($layout, $jenis, $mode);
+        $pdf = $this->newDocument($layout, $jenis, $mode, (string) ($data['nama_peserta'] ?? ''));
 
         [$red, $green, $blue] = $this->textColor();
         $pdf->SetTextColor($red, $green, $blue);
@@ -105,7 +106,7 @@ final class CertificateRenderer
             $this->drawLines($pdf, $element, $hasil->lines, $hasil->size, $family, $style);
         }
 
-        $this->drawWatermark($pdf, $layout, $mode);
+        $this->drawWatermark($pdf, $mode, $watermarkText);
 
         return (string) $pdf->Output('sertifikat.pdf', 'S');
     }
@@ -141,8 +142,12 @@ final class CertificateRenderer
     /**
      * @param  array{page: array{size: string, orientation: string}}  $layout
      */
-    private function newDocument(array $layout, string $jenis, CertificateMode $mode): TCPDF
-    {
+    private function newDocument(
+        array $layout,
+        string $jenis,
+        CertificateMode $mode,
+        string $namaPeserta,
+    ): TCPDF {
         $pdf = new CertificateDocument(
             $layout['page']['orientation'],
             'mm',
@@ -154,7 +159,10 @@ final class CertificateRenderer
 
         $pdf->SetCreator('Generator Sertifikat XCODE');
         $pdf->SetAuthor('XCODE Training');
-        $pdf->SetTitle("Sertifikat {$jenis} ({$mode->label()})");
+        // Judul memuat nama peserta agar berkas mudah dikenali dari metadata (PRD PD-12).
+        $namaPeserta = trim($namaPeserta);
+        $judul = "Sertifikat {$jenis}".($namaPeserta === '' ? '' : " - {$namaPeserta}");
+        $pdf->SetTitle("{$judul} ({$mode->label()})");
         // Metadata tidak dikompres, sehingga status dokumen tetap terbaca mesin
         // tanpa perlu membongkar stream zlib (dipakai pengecekan otomatis).
         $pdf->SetSubject('Status dokumen: '.strtoupper($mode->value));
@@ -421,12 +429,25 @@ final class CertificateRenderer
         return (string) config('certificate.qr.url');
     }
 
-    private function drawWatermark(TCPDF $pdf, array $layout, CertificateMode $mode): void
+    private function drawWatermark(TCPDF $pdf, CertificateMode $mode, ?string $teksBebas): void
     {
         /** @var array{text: string, color: array{0: int, 1: int, 2: int}, alpha: float, size: float, angle: float}|null $pengaturan */
         $pengaturan = config("certificate.watermark.{$mode->value}");
+        $teks = trim((string) $teksBebas);
 
-        if (! is_array($pengaturan)) {
+        if ($teks === '') {
+            // Tanpa teks bebas, mode terbit memang tidak diberi tanda air.
+            if ($mode === CertificateMode::Terbit) {
+                return;
+            }
+
+            $teks = (string) ($pengaturan['text'] ?? '');
+        } elseif (! is_array($pengaturan)) {
+            // Teks bebas pada mode terbit memakai gaya netral milik pratinjau.
+            $pengaturan = config('certificate.watermark.pratinjau');
+        }
+
+        if (! is_array($pengaturan) || $teks === '') {
             return;
         }
 
@@ -438,7 +459,6 @@ final class CertificateRenderer
         $tengahX = $pdf->getPageWidth() / 2;
         $tengahY = $pdf->getPageHeight() / 2;
         $ukuran = (float) $pengaturan['size'];
-        $teks = $pengaturan['text'];
 
         $pdf->setAlpha((float) $pengaturan['alpha'], 'Normal', (float) $pengaturan['alpha']);
         $pdf->SetTextColor(...$pengaturan['color']);
