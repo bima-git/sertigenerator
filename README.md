@@ -1,116 +1,319 @@
-# Generator Sertifikat XCODE
+# Generator Sertifikat Otomatis XCODE
 
-Aplikasi Laravel 12 untuk menerbitkan sertifikat seminar dan bootcamp XCODE Training, dengan keluaran PDF A4 mendatar.
-
-## Dependensi PDF: TCPDF dikunci di `^6.9`
-
-`composer.json` memakai `"tecnickcom/tcpdf": "^6.9"` (terpasang 6.11.4) dan **sengaja tidak dibiarkan naik ke 7.x**. Jangan longgarkan pin ini tanpa menyelesaikan tiga hal berikut:
-
-1. **Aset font tidak lagi dibundel.** TCPDF 7 memindahkan seluruh font ke `tecnickcom/tc-lib-pdf-font`, yang harus dibangun lebih dulu dengan `make fonts`. Akibatnya render gagal dengan `Com\Tecnick\Pdf\Font\Exception: unable to read file: helvetica.json` pada instalasi bersih, dan mesin pengembangan Windows di proyek ini tidak punya `make`.
-2. **`addTTFfont` dihapus.** Dokumen desain memakai `addTTFfont` untuk membenamkan Tinos/Liberation Serif sebagai pengganti sementara font asli sertifikat. Di 7.x font hanya bisa dimasukkan lewat importer `tc-lib-pdf-font`.
-3. **Font `.php`/`.z` tidak didukung lagi.** `K_PATH_FONTS` dan definisi font gaya lama yang dirujuk Design System bagian 9.1/9.8 tidak berlaku di 7.x.
-
-Bila `vendor/` hilang, cukup jalankan `composer install`; versi terkunci sudah tersimpan di `composer.lock`. Bila suatu saat memang harus pindah ke TCPDF 7, siapkan `make` di semua mesin dan runner CI, jalankan `make -C vendor/tecnickcom/tc-lib-pdf-font deps fonts`, lalu ganti mekanisme pemuatan font sebelum memperbarui pin.
-
-## Font sertifikat
-
-Font asli sertifikat dimasukkan lewat TCPDF `addTTFfont`, bukan dibaca langsung sebagai TTF. Letakkan berkas `.ttf` di `assets/fonts`, lalu jalankan:
-
-```bash
-php artisan certificates:import-fonts --download   # unduh Tinos, PinyonScript, Poppins (OFL)
-php artisan certificates:import-fonts              # impor dari assets/fonts
-```
-
-Hasilnya berupa definisi `.php`/`.z` di `storage/app/fonts` (tidak masuk git, jadi jalankan ulang setelah clone baru). Nama keluarga mengikuti aturan TCPDF: `Tinos-Regular.ttf` menjadi `tinos`, `Tinos-Bold.ttf` menjadi `tinosb`, `PinyonScript-Regular.ttf` menjadi `pinyonscript`, `Poppins-Regular.ttf` menjadi `poppins`. Nama itulah yang dirujuk `config/layout/*.php`. Selama berkasnya belum ada, renderer kembali ke `times` dan mencatat peringatan.
-
-## Aset desain
-
-Tampilan mengikuti sampel `Syafrizal Devan Pradana.pdf`. Berkas yang dipakai ada di `assets/templates`:
-
-- `background.png` — latar geometris A4 mendatar (1400x990), digambar penuh halaman.
-- `logo.png` — pita merah + lingkaran logo XCODE, latar transparan, diletakkan mulai `x 210`, `y 0` dengan ukuran 75 x 62,5 mm.
-- `signature.png` — tanda tangan dengan latar transparan; ganti berkas ini bila penanda tangan berganti.
-
-Logo dan tanda tangan diekstrak dari sampel sehingga posisinya sudah sama. Selain itu ada elemen `type: line` untuk garis dekoratif: `garis_nama` (bawah nama peserta) dan `garis_tanda_tangan`, dengan `w` (panjang) dan `tebal` dalam mm. Koordinat `y` teks adalah garis dasar (baseline) hasil kalibrasi terhadap sampel.
-
-## Garis bantu kalibrasi
-
-Untuk mencocokkan latar asli dengan teks, cetak sampel dengan garis bantu 10 mm dan penanda koordinat setiap elemen:
-
-```bash
-php artisan certificates:make-samples --guides --output=storage/app/samples
-```
-
-Setiap elemen diberi tanda silang biru di titik jangkar (`x`, `y`), label nama dan koordinatnya, serta kotak hijau untuk elemen gambar.
-
-## Pratinjau di browser
-
-Jalankan server lalu buka `http://127.0.0.1:8000/pratinjau`:
-
-```bash
-php artisan serve
-```
-
-Halaman ini menampilkan PDF langsung di dalam iframe dengan data contoh. Pilihan yang tersedia: jenis layout (`seminar`/`bootcamp`), peserta contoh, mode (`terbit`/`pratinjau`/`dibatalkan`), dan garis bantu kalibrasi.
+Aplikasi web internal berbasis **Laravel 12** yang digunakan oleh divisi training dan operasional **XCODE** untuk menerbitkan sertifikat kegiatan (Seminar/Webinar dan Bootcamp/Magang) secara terstandarisasi, aman, dan otomatis dalam format PDF.
 
 ---
 
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## 1. Gambaran Umum & Tujuan Sistem
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Generator Sertifikat XCODE dirancang untuk mempermudah operator dan administrator dalam mengelola data kegiatan, peserta, penomoran resmi, hingga penerbitan sertifikat tanpa risiko nomor ganda atau inkonsistensi format.
 
-## About Laravel
+### Tujuan Utama:
+1. **Kecepatan:** Operator dapat menerbitkan sertifikat resmi dalam waktu kurang dari satu menit.
+2. **Akurasi & Integritas Penomoran:** Penomoran sertifikat mengikuti formula baku XCODE secara otomatis tanpa duplikasi, bahkan pada kondisi permintaan penerbitan bersamaan (*concurrent issuance*).
+3. **Keterulangan (Reproducibility):** Setiap sertifikat yang telah diterbitkan tersimpan dalam riwayat dan dapat diunduh ulang dengan hasil data cetak yang identik secara visual.
+4. **Keamanan & Akuntabilitas:** Hak akses berbasis peran (Admin dan Operator), proteksi akun admin, serta pencatatan audit log lengkap untuk setiap aksi administratif dan mutasi data.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 2. Tech Stack & Dependensi
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+* **Framework Backend:** Laravel 12 (PHP 8.2+)
+* **Basis Data:**
+  * **Development & Testing:** SQLite / MySQL 8 / MariaDB 10.6+
+  * **Produksi:** MySQL 8 / MariaDB 10.6+ melalui Eloquent ORM & Query Builder
+* **Frontend & Tampilan:** Blade Templating Engine, Tailwind CSS v4, Vite 7
+* **Tipografi & Ikon:**
+  * `@fontsource-variable/geist` & `@fontsource-variable/geist-mono`
+  * `@phosphor-icons/web`
+* **PDF Rendering:** `PdfRenderer` biner compliant `%PDF-1.4` dengan dukungan watermark (*PRATINJAU*, *DIBATALKAN*), siap diintegrasikan dengan modul layout TCPDF.
+* **Testing:** PHPUnit 11.5 dengan unit testing dan feature testing berbasis SQLite in-memory.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 3. Persyaratan Sistem
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Sebelum menjalankan proyek, pastikan perangkat telah terpasang:
+* **PHP:** Versi 8.2 atau lebih baru (direkomendasikan PHP 8.3 / 8.4 / 8.5).
+  * Ekstensi PHP wajib: `pdo`, `pdo_sqlite` (untuk testing/dev), `pdo_mysql` (untuk database MySQL), `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `fileinfo`.
+* **Composer:** Versi 2.x
+* **Node.js:** Versi 18.x atau lebih baru & **NPM** Versi 9.x atau lebih baru.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 4. Panduan Instalasi & Konfigurasi
 
-### Premium Partners
+### Langkah 1: Kloning & Masuk ke Direktori Proyek
+```bash
+git clone https://github.com/bima-git/sertigenerator.git
+cd sertigenerator
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Langkah 2: Instalasi Dependensi Backend & Frontend
+```bash
+# Instalasi paket PHP Composer
+composer install
 
-## Contributing
+# Instalasi paket JavaScript NPM
+npm install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Langkah 3: Konfigurasi File Lingkungan (.env)
+Salin berkas contoh konfigurasi `.env.example` menjadi `.env`:
+```bash
+# Windows PowerShell
+copy .env.example .env
 
-## Code of Conduct
+# Linux / macOS
+cp .env.example .env
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Generate application encryption key:
+```bash
+php artisan key:generate
+```
 
-## Security Vulnerabilities
+### Langkah 4: Pengaturan Basis Data pada `.env`
+Buka file `.env` dan sesuaikan driver basis data:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+#### Opsi A: Menggunakan SQLite (Rekomendasi Cepat untuk Dev Lokal)
+Pastikan berkas `database/database.sqlite` sudah ada:
+```bash
+# Windows PowerShell
+New-Item -ItemType File -Path database\database.sqlite -Force
 
-## License
+# Linux / macOS
+touch database/database.sqlite
+```
+Konfigurasi pada `.env`:
+```dotenv
+DB_CONNECTION=sqlite
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+#### Opsi B: Menggunakan MySQL / MariaDB
+Buat database bernama `sertigenerator` pada server MySQL Anda, lalu atur pada `.env`:
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=sertigenerator
+DB_USERNAME=root
+DB_PASSWORD=rahasia_anda
+```
+
+### Langkah 5: Migrasi Basis Data
+Jalankan migrasi skema tabel (users, events, certificates, audit_logs, sessions, cache, jobs):
+```bash
+php artisan migrate
+```
+
+### Langkah 6: Konfigurasi Akun Administrator Awal & Data Seeder
+Pada file `.env`, tentukan kredensial akun administrator awal yang akan dibuat oleh seeder.
+
+> [!WARNING]
+> **Keamanan Kredensial:** Pengembang **wajib** mengganti nilai `ADMIN_PASSWORD` pada file `.env` lokal dengan kata sandi yang unik dan kuat (minimal 12 karakter kombinasi huruf, angka, dan simbol) sebelum menjalankan perintah seeder. Jangan pernah membiarkan nilai placeholder default digunakan pada lingkungan staging atau produksi!
+
+Contoh konfigurasi pada `.env`:
+```dotenv
+ADMIN_USERNAME=admin
+ADMIN_NAMA="Administrator XCODE"
+ADMIN_PASSWORD="GantiDenganPasswordKuatDanUnikMinimal12Karakter!"
+```
+
+Jalankan perintah seeder untuk membuat akun Admin dan data master kegiatan XCODE:
+```bash
+# Membuat akun admin awal (membaca variabel ADMIN_* pada .env)
+php artisan db:seed --class=AdminUserSeeder
+
+# Mengisi master data kegiatan resmi dari dokumen aturan kode XCODE
+php artisan db:seed --class=EventSeeder
+
+# ATAU jalankan seluruh seeder sekaligus:
+php artisan db:seed
+```
+
+---
+
+## 5. Menjalankan Aplikasi
+
+### Mode Pengembangan (Development)
+Jalankan server aplikasi Laravel dan asset bundler Vite secara paralel:
+
+```bash
+# Terminal 1: Web Server Laravel
+php artisan serve
+
+# Terminal 2: Vite Dev Server
+npm run dev
+```
+
+Aplikasi dapat diakses melalui browser pada alamat:
+`http://127.0.0.1:8000`
+
+### Build Aset Frontend untuk Produksi
+Jika ingin mengkompilasi file CSS dan JavaScript ke direktori `public/build`:
+```bash
+npm run build
+```
+
+---
+
+## 6. Fitur yang Tersedia (Kondisi Aktual Repository)
+
+### A. Autentikasi & Keamanan Akun
+* **Masuk & Keluar:** Login menggunakan username dan password ter-hash (`/masuk`), logout dengan pembersihan sesi aman (`/keluar`).
+* **Proteksi Percobaan Masuk:** Penguncian akun otomatis selama 10 menit setelah 5 kali gagal login berturut-turut.
+* **Manajemen Sesi:** Sesi kedaluwarsa otomatis setelah 8 jam (480 menit) tanpa aktivitas, regenerasi token sesi saat login untuk mencegah session fixation.
+* **Pengaturan Akun Pengguna:** Pengguna dapat memperbarui nama dan mengganti kata sandi mandiri (`/akun`).
+
+### B. Event Management (Backend Administrasi Kegiatan)
+* **Tambah Kegiatan:** Admin dapat mendaftarkan kegiatan baru (`/admin/kegiatan/baru`) dengan atribut jenis (seminar/bootcamp), kode, judul, penerbit, program bawaan, opsi nomor, dan opsi QR.
+* **Edit Kegiatan:** Memperbarui data kegiatan tanpa merusak data cetak historis sertifikat lama (`/admin/kegiatan/{id}/ubah`).
+* **Aktif / Nonaktif Kegiatan:** Mengubah status kegiatan (`/admin/kegiatan/{id}/aktif`). Kegiatan nonaktif otomatis disembunyikan dari dropdown penerbitan.
+* **Integritas Data:** Tidak ada rute penghapusan permanen kegiatan demi menjaga riwayat integritas sertifikat.
+* **Dukungan Kode Ganda:** Kode kegiatan yang sama antar-versi kegiatan diizinkan sesuai aturan bisnis PRD KG-04.
+* **Pencarian & Penyaringan:** Pencarian cepat menurut kode/judul dan filter jenis kegiatan.
+
+### C. User Management (Backend Administrasi Pengguna)
+* **Tambah Pengguna Baru:** Admin dapat menambahkan operator atau admin baru (`/admin/pengguna/baru`). Sistem menghasilkan kata sandi sementara yang aman secara otomatis dan menampilkannya sekali di layar.
+* **Edit Pengguna:** Memperbarui data pengguna, peran, dan status akun aktif/nonaktif (`/admin/pengguna/{id}/ubah`).
+* **Reset Kata Sandi:** Admin dapat mereset kata sandi pengguna (`/admin/pengguna/{id}/reset-sandi`), menghasilkan kata sandi sementara baru, serta membuka kunci akun yang terkunci akibat kegagalan login.
+* **Proteksi Keamanan Berlapis (Server-Side):**
+  * *Self-deactivation protection:* Admin tidak dapat menonaktifkan akunnya sendiri.
+  * *Self-demotion protection:* Admin tidak dapat menurunkan perannya sendiri menjadi operator.
+  * *Last active admin protection:* Admin aktif terakhir di sistem dilindungi dari penonaktifan maupun penurunan peran, menjamin sistem selalu memiliki minimal satu administrator aktif.
+
+### D. Penomoran Sertifikat Otomatis (Numbering Engine)
+* **Formula Resmi:** Mengikuti format baku: `{kode}/{seri}/{urut}/{penerbit}/{bulan_romawi}/{tahun}` (contoh: `35/001/003/Xcodetraining/X/2026`).
+* **Alokasi Nomor Atomik:** Menggunakan penguncian transaksi database baris kegiatan (`lockForUpdate`) untuk mencegah nomor ganda saat ada banyak permintaan bersamaan.
+* **Pencegahan Penggunaan Ulang:** Sertifikat yang dibatalkan tetap dihitung dalam penentuan nomor urut agar nomor urut lama tidak dipakai kembali.
+
+### E. Formulir Penerbitan Sertifikat
+* **Penerbitan Interaktif:** Formulir adaptif untuk jenis Seminar/Webinar dan Bootcamp/Magang (`/terbitkan`).
+* **Saran Nomor Otomatis:** Perhitungan nomor urut berikutnya secara otomatis melalui endpoint `/api/nomor`.
+* **Pratinjau Instan:** Pratinjau PDF di tab baru dengan tanda air `PRATINJAU` tanpa menyimpan baris ke database (`/pratinjau`).
+* **Penerbitan Atomik:** Transaksi penyimpanan database, verifikasi nomor unik, render PDF, dan unduhan berkas langsung (`/terbitkan`).
+
+### F. Riwayat & Pembatalan Sertifikat
+* **Pencarian & Saringan Riwayat:** Riwayat penerbitan dengan filter nama peserta, nomor, jenis, status, dan rentang tanggal (`/riwayat`).
+* **Unduh Ulang Identik:** Mengunduh ulang PDF sertifikat dari salinan `data_cetak` yang tersimpan (`/riwayat/{id}/pdf`).
+* **Pembatalan Resmi:** Admin dapat membatalkan sertifikat dengan mencantumkan alasan pembatalan. Sertifikat berstatus dibatalkan akan memiliki watermark `DIBATALKAN` saat diunduh ulang (`/riwayat/{id}/batalkan`).
+
+### G. Audit Logging
+* **Pencatatan Audit:** Seluruh peristiwa sistem (`masuk`, `gagal_masuk`, `terbit`, `unduh_ulang`, `batal`, `ubah_event`, `ubah_user`) dicatat ke tabel `audit_logs` bersama identitas pengguna, target, rincian tindakan, alamat IP, dan stempel waktu.
+* **Keamanan Kredensial:** Kata sandi, hash kata sandi, maupun kata sandi sementara tidak pernah dicatat ke audit log.
+* **Pemantauan Admin:** Admin dapat memantau dan memfilter log audit berdasarkan jenis aksi (`/admin/audit`).
+
+---
+
+## 7. Fitur yang Belum Tersedia / Di Luar Lingkup (Non-Scope)
+
+Fitur-fitur berikut **belum tersedia** pada versi saat ini sesuai ruang lingkup PRD:
+* Penerbitan massal otomatis melalui impor berkas CSV atau Excel.
+* Pengiriman berkas sertifikat secara otomatis via email atau WhatsApp ke peserta.
+* Halaman verifikasi publik sertifikat pada domain luar (`xcode.co.id/cekkodesertifikat`).
+* Tanda tangan digital kriptografis (digital signature / PKI / blockchain).
+
+---
+
+## 8. Panduan Menjalankan Pengujian (Testing)
+
+Aplikasi dilengkapi dengan rangkaian pengujian otomatis (*test suite*) yang mencakup unit test dan feature test. Pengujian menggunakan SQLite in-memory dan database transaction sehingga tidak mengubah data riil.
+
+### Menjalankan Seluruh Rangkaian Pengujian:
+```bash
+php artisan test
+```
+
+### Menjalankan Pengujian Modul Administrasi (Event & User Management):
+```bash
+# Menjalankan seluruh feature test modul Admin
+php artisan test tests/Feature/Admin
+
+# Menjalankan spesifik test Event Management
+php artisan test tests/Feature/Admin/EventManagementTest.php
+
+# Menjalankan spesifik test User Management
+php artisan test tests/Feature/Admin/UserManagementTest.php
+```
+
+### Menjalankan Pengujian Penomoran & Penerbitan:
+```bash
+# Uji unit pembangun nomor dan angka romawi
+php artisan test tests/Unit/Services
+
+# Uji konkurensi alokasi nomor dan kasus nama ekstrem
+php artisan test tests/Feature/ConcurrencyAndEdgeCasesTest.php
+
+# Uji alur penerbitan sertifikat
+php artisan test tests/Feature/IssueCertificateTest.php
+```
+
+> **Catatan Pengujian Headless / CI:**  
+> Untuk pengujian feature yang me-render tampilan Blade lengkap di lingkungan tanpa server Vite aktif, pengujian backend memanggil `$this->withoutVite()` agar pengujian fungsional berjalan independen dari ketersediaan build manifest asset.
+
+---
+
+## 9. Struktur Direktori Utama
+
+```text
+sertigenerator/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Admin/
+│   │   │   │   ├── EventController.php    # Pengelolaan kegiatan admin
+│   │   │   │   └── UserController.php     # Pengelolaan pengguna admin
+│   │   │   ├── AccountController.php      # Pengaturan profil & kata sandi
+│   │   │   ├── AuthController.php         # Masuk, keluar, & throttle
+│   │   │   ├── HistoryController.php      # Riwayat & pembatalan
+│   │   │   └── IssueController.php        # Formulir & aksi penerbitan
+│   │   ├── Middleware/
+│   │   │   └── EnsureUserIsActive.php     # Proteksi penolakan akun nonaktif
+│   │   └── Requests/
+│   │       ├── EventRequest.php           # Validasi formulir kegiatan
+│   │       ├── IssueRequest.php           # Validasi penerbitan sertifikat
+│   │       ├── LoginRequest.php           # Validasi autentikasi
+│   │       └── UserRequest.php            # Validasi formulir pengguna & proteksi peran
+│   ├── Models/
+│   │   ├── AuditLog.php                   # Model catatan audit sistem
+│   │   ├── Certificate.php                # Model sertifikat & snapshot data cetak
+│   │   ├── Event.php                      # Model master data kegiatan
+│   │   └── User.php                       # Model akun pengguna & peran
+│   └── Services/
+│       ├── AuditLogger.php                # Service pencatatan peristiwa audit
+│       ├── HistoryService.php             # Logika unduh ulang & pembatalan
+│       ├── IssueService.php               # Logika penerbitan atomik & penguncian nomor
+│       ├── NumberAllocator.php            # Penentu nomor urut berikutnya
+│       ├── NumberGenerator.php            # Pembangun nomor resmi XCODE
+│       ├── PdfRenderer.php                # Generator biner PDF
+│       └── Roman.php                      # Konversi angka bulan ke romawi
+├── database/
+│   ├── migrations/                        # Skema database terurut kronologis
+│   └── seeders/
+│       ├── AdminUserSeeder.php            # Pembuatan akun admin awal dari .env
+│       ├── DatabaseSeeder.php             # Seeder master
+│       └── EventSeeder.php                # Master kegiatan resmi XCODE
+├── resources/
+│   ├── css/                               # Tailwind CSS v4 & custom design tokens
+│   ├── js/                                # JavaScript interaktif form & dialog
+│   └── views/                             # Template antarmuka Blade
+│       ├── admin/                         # Halaman kegiatan, pengguna, audit
+│       ├── auth/                          # Halaman masuk
+│       ├── history/                       # Halaman riwayat & detail sertifikat
+│       ├── issue/                         # Halaman penerbitan sertifikat
+│       └── layouts/                       # Layout bersama & navigasi
+├── routes/
+│   └── web.php                            # Definisi seluruh rute aplikasi
+└── tests/
+    ├── Feature/
+    │   ├── Admin/                         # Test feature Event & User Management
+    │   └── ...                            # Test autentikasi, penerbitan, riwayat
+    └── Unit/                              # Test unit penomoran & angka romawi
+```
+
+---
+
+## 10. Lisensi & Hak Cipta
+
+Proyek ini dikembangkan secara internal untuk **PT Teknologi Server Indonesia (XCODE)**. Seluruh hak cipta desain sertifikat dan aturan penomoran merupakan milik XCODE.
