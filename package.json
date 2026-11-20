@@ -7,6 +7,9 @@
         "dev": "vite"
     },
     "devDependencies": {
+        "@fontsource-variable/geist": "^5.1.0",
+        "@fontsource-variable/geist-mono": "^5.1.0",
+        "@phosphor-icons/web": "^2.1.1",
         "@tailwindcss/vite": "^4.0.0",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",

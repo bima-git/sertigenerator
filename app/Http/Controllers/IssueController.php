@@ -14,6 +14,19 @@ use Illuminate\Http\Response;
 class IssueController extends Controller
 {
     /**
+     * Halaman form penerbitan. Daftar kegiatan aktif dikirim sekali untuk dropdown pencarian.
+     *
+     * Rute: GET /terbitkan (Nama: issue.form)
+     */
+    public function create(): \Illuminate\Contracts\View\View
+    {
+        return view('issue.create', [
+            'events' => Event::query()->aktif()
+                ->get(['id', 'kode', 'judul', 'jenis', 'penerbit', 'bernomor', 'pakai_qr', 'program_default', 'aktif']),
+        ]);
+    }
+
+    /**
      * Mengembalikan daftar kegiatan aktif untuk dropdown pilihan pada form penerbitan.
      * Mendukung filter jenis (seminar/bootcamp) dan pencarian query (q).
      *
@@ -90,11 +103,9 @@ class IssueController extends Controller
      */
     public function store(IssueRequest $request, IssueService $issueService): Response
     {
-        $user = $request->user() ?? User::query()->first() ?? User::create([
-            'name'     => 'Operator Cadangan',
-            'email'    => 'operator@xcode.test',
-            'password' => bcrypt('password'),
-        ]);
+        // Tanpa akun cadangan buatan otomatis: penerbit harus pengguna nyata.
+        $user = auth()->user();
+        abort_unless($user, 401);
 
         $result = $issueService->issue($request->validated(), $user);
 
