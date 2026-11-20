@@ -39,7 +39,7 @@ final class CertificateRenderer
     ): string {
         $layout = $this->layouts->get($jenis, $versiLayout);
 
-        $pdf = $this->newDocument($layout, $jenis, $mode);
+        $pdf = $this->newDocument($layout, $jenis, $mode, (string) ($data['nama_peserta'] ?? ''));
 
         [$red, $green, $blue] = $this->textColor();
         $pdf->SetTextColor($red, $green, $blue);
@@ -141,8 +141,12 @@ final class CertificateRenderer
     /**
      * @param  array{page: array{size: string, orientation: string}}  $layout
      */
-    private function newDocument(array $layout, string $jenis, CertificateMode $mode): TCPDF
-    {
+    private function newDocument(
+        array $layout,
+        string $jenis,
+        CertificateMode $mode,
+        string $namaPeserta,
+    ): TCPDF {
         $pdf = new CertificateDocument(
             $layout['page']['orientation'],
             'mm',
@@ -154,7 +158,10 @@ final class CertificateRenderer
 
         $pdf->SetCreator('Generator Sertifikat XCODE');
         $pdf->SetAuthor('XCODE Training');
-        $pdf->SetTitle("Sertifikat {$jenis} ({$mode->label()})");
+        // Judul memuat nama peserta agar berkas mudah dikenali dari metadata (PRD PD-12).
+        $namaPeserta = trim($namaPeserta);
+        $judul = "Sertifikat {$jenis}".($namaPeserta === '' ? '' : " - {$namaPeserta}");
+        $pdf->SetTitle("{$judul} ({$mode->label()})");
         // Metadata tidak dikompres, sehingga status dokumen tetap terbaca mesin
         // tanpa perlu membongkar stream zlib (dipakai pengecekan otomatis).
         $pdf->SetSubject('Status dokumen: '.strtoupper($mode->value));

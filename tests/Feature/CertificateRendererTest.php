@@ -49,6 +49,15 @@ final class CertificateRendererTest extends TestCase
         $this->assertStringContainsString('Yogyakarta, 24 Oktober 2026', $teks);
     }
 
+    public function test_pdf_title_metadata_contains_participant_name(): void
+    {
+        $judul = $this->titleOf($this->renderer->render('seminar', $this->seminarData(), withBackground: false));
+
+        $this->assertStringContainsString('Arief Soekardi', $judul);
+        $this->assertStringContainsString('Sertifikat seminar', $judul);
+        $this->assertStringContainsString('Terbit', $judul);
+    }
+
     public function test_renders_seminar_fixed_elements(): void
     {
         $teks = $this->textOf($this->renderer->render('seminar', $this->seminarData(), withBackground: false));
@@ -234,6 +243,23 @@ final class CertificateRendererTest extends TestCase
             'nomor_lengkap' => '35/001/003/Xcodetraining/X/2026',
             'tanggal_kota' => 'Yogyakarta, 24 Oktober 2026',
         ];
+    }
+
+    /**
+     * Mengambil entri /Title dari information dictionary, bukan dari teks isi halaman.
+     */
+    private function titleOf(string $pdf): string
+    {
+        preg_match('/\/Title\s*\((.*?)\)\s*\/(?:Subject|Author|Creator|Producer)/s', $pdf, $cocok);
+
+        $judul = str_replace(['\\(', '\\)'], ['(', ')'], $cocok[1] ?? '');
+
+        // TCPDF menulis metadata sebagai UTF-16BE ber-BOM, bukan ASCII.
+        if (str_starts_with($judul, "\xFE\xFF")) {
+            $judul = mb_convert_encoding(substr($judul, 2), 'UTF-8', 'UTF-16BE');
+        }
+
+        return $judul;
     }
 
     private function uncompressed(string $pdf): string
