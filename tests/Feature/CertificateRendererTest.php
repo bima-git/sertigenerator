@@ -98,6 +98,25 @@ final class CertificateRendererTest extends TestCase
         $this->assertSame(1, preg_match_all('/\/Type \/Page\b/', $pdf));
     }
 
+    public function test_long_name_and_event_title_stay_on_one_page(): void
+    {
+        // Nama 70 karakter dan judul 111 karakter memaksa pengecilan font lalu
+        // pemecahan dua baris; keduanya harus tetap muat tanpa lembar tambahan.
+        $pdf = $this->renderer->render('seminar', [
+            'nama_peserta' => 'Raden Mas Muhammad Syafrizal Devan Pradana Hidayatullah Kusumawardhana',
+            'judul_cetak' => 'Membangun Aplikasi Web Modern dengan Laravel, React, dan Kecerdasan Buatan untuk Meningkatkan Produktivitas Tim',
+            'nomor_lengkap' => '35/001/003/Xcodetraining/X/2026',
+            'tanggal_kota' => 'Yogyakarta, 24 Oktober 2026',
+        ], withBackground: false);
+
+        $this->assertSame(1, preg_match_all('/\/Type \/Page\b/', $pdf));
+
+        $teks = $this->textOf($pdf);
+
+        $this->assertStringContainsString('Kusumawardhana', $teks);
+        $this->assertStringContainsString('Produktivitas Tim', $teks);
+    }
+
     public function test_writes_pdf_to_file(): void
     {
         $folder = storage_path('framework/testing/renderer');

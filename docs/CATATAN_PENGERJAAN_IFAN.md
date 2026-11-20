@@ -307,7 +307,7 @@ Metadata PDF: `SetTitle('Sertifikat {jenis} - {nama peserta} ({mode})')` memenuh
 
 | Berkas | Cakupan |
 |---|---|
-| `tests/Feature/CertificateRendererTest.php` | Teks & elemen seminar/bootcamp, QR, garis bantu, mode watermark, layout arsip, file output |
+| `tests/Feature/CertificateRendererTest.php` | Teks & elemen seminar/bootcamp, QR, garis bantu, mode watermark, layout arsip, file output, metadata judul, nama 70 karakter & judul panjang tetap satu halaman |
 | `tests/Unit/Services/LayoutConfigTest.php` | Validasi layout, pemilihan versi arsip, fallback, font penanda tangan, versi arsip |
 | `tests/Unit/Pdf/CertificateDataMapperTest.php` | Pemetaan Certificate → data layout |
 | `tests/Unit/Services/TextFitterTest.php` | Pengecilan font & pemecahan baris nama panjang |
