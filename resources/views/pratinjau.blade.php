@@ -85,10 +85,10 @@
     @endif
 
     <iframe
-        src="{{ $pdfUrl }}"
+        src="{{ $pdfUrl }}#view=Fit&navpanes=0"
         title="Pratinjau {{ $sampel['berkas'] }}"
         class="block w-full bg-white"
-        style="height: min(78vh, 900px)"
+        style="aspect-ratio: 842 / 595; max-height: 78vh; height: auto"
     ></iframe>
 </div>
 @endsection
