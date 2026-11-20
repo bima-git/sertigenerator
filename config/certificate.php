@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 /*
  * Pengaturan sertifikat yang tidak termasuk koordinat layout.
- * Warna dan ukuran tanda air masih perkiraan [KALIBRASI] sampai sampel asli diterima.
+ * Warna dan ukuran tanda air masih perkiraan [KALIBRASI]; nanti teksnya menjadi input bebas.
  */
 return [
     'text_color' => [17, 17, 17],
 
     'qr' => [
-        // static: alamat tetap. per_nomor: alamat ditambah ?kode={nomor terenkode URL}.
-        'mode' => env('CERTIFICATE_QR_MODE', 'static'),
-        'static_url' => 'https://xcode.co.id/cekkodesertifikat',
-        'per_nomor_url' => 'https://xcode.co.id/cekkodesertifikat?kode={nomor}',
+        // Satu alamat untuk semua sertifikat. Tampil atau tidaknya QR diatur lewat
+        // data event (pakai_qr), bukan dengan mengubah alamat ini.
+        'url' => 'https://xcode.co.id/cekkodesertifikat',
     ],
 
     'watermark' => [

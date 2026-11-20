@@ -285,9 +285,9 @@ Catatan:
 Pengaturan di `config/certificate.php`:
 
 - `text_color` — warna teks utama `[17,17,17]`.
-- `qr.mode` — `static` (alamat tetap) atau `per_nomor` (`?kode={nomor}`, nomor di-`rawurlencode`).
-- `qr.static_url`, `qr.per_nomor_url` — alamat tujuan QR.
-- `watermark.pratinjau` / `watermark.dibatalkan` — teks, warna, alpha, ukuran (90 pt), sudut (45°).
+- `qr.url` — satu alamat untuk semua sertifikat: `https://xcode.co.id/cekkodesertifikat`.
+- Tampil atau tidaknya QR diatur lewat data event `pakai_qr` (`CertificateDataMapper`), bukan dengan mengubah alamat; pemanggil juga boleh mengirim `pakai_qr => false` untuk melewati elemen QR tanpa menyunting layout.
+- `watermark.pratinjau` / `watermark.dibatalkan` — teks, warna, alpha, ukuran (90 pt), sudut (45°). Nilainya masih perkiraan dan nanti akan menjadi input teks bebas, sehingga watermark tidak lagi terbatas pada dua label itu.
 
 Metadata PDF: `SetSubject('Status dokumen: TERBIT|PRATINJAU|DIBATALKAN')` disimpan tanpa kompresi agar status bisa dicek mesin tanpa membongkar stream.
 
@@ -322,7 +322,8 @@ Perintah: `php artisan test --filter='CertificateRendererTest|LayoutConfigTest'`
 ## 11. Batasan & Pertanyaan Terbuka
 
 1. **Seminar tanpa nomor** — `RenderException` saat `bernomor = false`; perlu keputusan coach.
-2. **Tujuan QR** — saat ini `https://xcode.co.id/cekkodesertifikat` (mode `static`); alamat final belum dikonfirmasi.
-3. **Contoh asli tidak masuk repo** — empat PDF contoh ada di root dan belum di-commit, sehingga kalibrasi belum bisa diuji otomatis di CI.
-4. **Halaman pratinjau wajib login** — sudah memakai shell `layouts.app`, sehingga tidak bisa dibuka tanpa sesi. Bila nanti perlu diakses publik, buat layout tamu terpisah, bukan melonggarkan grup `auth`.
-5. **Font sumber** — `.ttf` tidak dibundel; setiap mesin/runner baru wajib menjalankan `certificates:import-fonts --download` sebelum render final.
+2. **Tujuan QR** — sudah diputuskan satu alamat untuk semua sertifikat, `https://xcode.co.id/cekkodesertifikat`; mode per nomor dihapus dari konfigurasi.
+3. **Watermark** — ukuran/warna/alpha masih perkiraan; akan menjadi input teks bebas yang bisa diganti-ganti, jadi jangan dikunci ke dua label `PRATINJAU`/`DIBATALKAN`.
+4. **Contoh asli tidak masuk repo** — empat PDF contoh ada di root dan belum di-commit, sehingga kalibrasi belum bisa diuji otomatis di CI.
+5. **Halaman pratinjau wajib login** — sudah memakai shell `layouts.app`, sehingga tidak bisa dibuka tanpa sesi. Bila nanti perlu diakses publik, buat layout tamu terpisah, bukan melonggarkan grup `auth`.
+6. **Font sumber** — `.ttf` tidak dibundel; setiap mesin/runner baru wajib menjalankan `certificates:import-fonts --download` sebelum render final.
