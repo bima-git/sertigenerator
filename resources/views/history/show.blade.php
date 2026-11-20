@@ -27,8 +27,8 @@
                 <p class="mt-1 text-white/70">{{ $c->event?->kode }} - {{ $c->event?->judul }}</p>
                 <div class="mt-6 flex items-center gap-2">
                     @if ($c->nomor_lengkap)
-                        <span class="num rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-[15px] backdrop-blur">{{ $c->nomor_lengkap }}</span>
-                        <button type="button" class="btn btn-icon !text-white/70 hover:!bg-white/10 hover:!text-white" data-copy="{{ $c->nomor_lengkap }}" aria-label="Salin nomor"><i class="ph ph-copy"></i></button>
+                        <span class="num min-w-0 break-all rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-[13px] sm:text-[15px] backdrop-blur">{{ $c->nomor_lengkap }}</span>
+                        <button type="button" class="btn btn-icon flex-none !text-white/70 hover:!bg-white/10 hover:!text-white" data-copy="{{ $c->nomor_lengkap }}" aria-label="Salin nomor"><i class="ph ph-copy"></i></button>
                     @else
                         <span class="text-white/70">Tanpa nomor</span>
                     @endif

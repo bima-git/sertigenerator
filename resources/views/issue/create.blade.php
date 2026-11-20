@@ -8,7 +8,7 @@
 <script type="application/json" id="events-data">@json($events)</script>
 
 <form id="issue-form" method="POST" action="{{ url('/terbitkan') }}" novalidate
-      class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:[grid-template-areas:'fields_summary''actions_summary']">
+      class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:[grid-template-areas:'fields_summary''actions_summary']">
     @csrf
 
     {{-- Isian --}}
@@ -143,15 +143,16 @@
     </aside>
 
     {{-- Aksi --}}
-    <div class="lg:[grid-area:actions] max-lg:sticky max-lg:bottom-[calc(64px+env(safe-area-inset-bottom))] max-lg:-mx-4 max-lg:px-4 max-lg:py-3 max-lg:bg-surface/90 max-lg:backdrop-blur" data-reveal style="--i:3">
-        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
-            <button type="button" id="btn-reset" class="btn btn-ghost"><i class="ph ph-eraser"></i>Kosongkan Form</button>
-            <div class="sm:ml-auto flex flex-col-reverse gap-2 sm:flex-row">
-                <button class="btn btn-secondary" formaction="{{ url('/pratinjau') }}" formtarget="_blank" data-loading-text="Membuat pratinjau"><i class="ph ph-eye"></i><span data-label>Pratinjau</span></button>
-                <button id="btn-submit" class="btn btn-primary btn-lg" data-loading-text="Menerbitkan" aria-describedby="submit-reason"><i class="ph ph-download-simple"></i><span data-label>Terbitkan &amp; Unduh</span></button>
+    <div class="lg:[grid-area:actions] max-lg:sticky max-lg:bottom-[calc(64px+env(safe-area-inset-bottom))] max-lg:-mx-4 max-lg:px-4 max-lg:py-2.5 max-lg:bg-surface/90 max-lg:backdrop-blur" data-reveal style="--i:3">
+        {{-- Di ponsel satu baris: Kosongkan dan Pratinjau jadi ikon supaya tidak menutupi form. --}}
+        <div class="flex items-center gap-2">
+            <button type="button" id="btn-reset" class="btn btn-ghost max-sm:px-3" aria-label="Kosongkan Form"><i class="ph ph-eraser"></i><span class="max-sm:sr-only">Kosongkan Form</span></button>
+            <div class="ml-auto flex flex-1 sm:flex-none gap-2">
+                <button class="btn btn-secondary max-sm:px-3" formaction="{{ url('/pratinjau') }}" formtarget="_blank" data-loading-text="Membuat pratinjau" aria-label="Pratinjau"><i class="ph ph-eye"></i><span data-label class="max-sm:sr-only">Pratinjau</span></button>
+                <button id="btn-submit" class="btn btn-primary btn-lg flex-1 sm:flex-none" data-loading-text="Menerbitkan" aria-describedby="submit-reason"><i class="ph ph-download-simple"></i><span data-label>Terbitkan &amp; Unduh</span></button>
             </div>
         </div>
-        <p id="submit-reason" class="hint mt-2 sm:text-right" aria-live="polite"></p>
+        <p id="submit-reason" class="hint mt-1.5 sm:text-right max-sm:text-xs empty:hidden" aria-live="polite"></p>
     </div>
 </form>
 @endsection
