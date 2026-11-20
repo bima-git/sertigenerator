@@ -21,7 +21,8 @@ return [
     'font' => [
         'serif' => 'tinos',
         'serif_bold' => 'tinosb',
-        // Font tulisan indah dan sans belum tersedia; renderer memakai fallback.
+        // Font script & sans berasal dari `certificates:import-fonts`; bila belum diimpor
+        // di mesin baru, renderer mundur ke 'fallback' dan mencatat peringatan.
         'script' => 'pinyonscript',
         'sans' => 'poppins',
         'fallback' => 'times',

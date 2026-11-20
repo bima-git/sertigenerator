@@ -404,7 +404,7 @@ final class CertificateRenderer
         }
 
         $pdf->write2DBarcode(
-            $this->qrContent($data),
+            $this->qrContent(),
             'QRCODE,M',
             (float) $element['x'],
             (float) $element['y'],
@@ -416,24 +416,9 @@ final class CertificateRenderer
         );
     }
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function qrContent(array $data): string
+    private function qrContent(): string
     {
-        $mode = (string) config('certificate.qr.mode', 'static');
-
-        if ($mode === 'per_nomor') {
-            $nomor = $this->nilai($data, 'nomor_lengkap', 'qr');
-
-            return str_replace(
-                '{nomor}',
-                rawurlencode($nomor),
-                (string) config('certificate.qr.per_nomor_url'),
-            );
-        }
-
-        return (string) config('certificate.qr.static_url');
+        return (string) config('certificate.qr.url');
     }
 
     private function drawWatermark(TCPDF $pdf, array $layout, CertificateMode $mode): void

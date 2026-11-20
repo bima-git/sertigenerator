@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 /*
  * Layout sertifikat bootcamp.
- * Versi 1.3: pita logo, garis bawah nama, dan garis tanda tangan mengikuti
+ * Versi 1.4: nama penanda tangan memakai serif bold seperti sampel "Taufik
+ * Hidayat.pdf" (sebelumnya sans). Versi 1.3: pita logo, garis bawah nama, dan garis tanda tangan mengikuti
  * template seminar "Syafrizal Devan Pradana.pdf". Versi 1.2: paragraf memecah
  * baris secara greedy seperti sampel "Taufik Hidayat.pdf", tidak lagi
  * menyeimbangkan panjang baris. Versi 1.1: struktur isi dari sampel itu,
@@ -13,7 +14,7 @@ declare(strict_types=1);
  * Setiap perubahan koordinat wajib menaikkan "versi" dan mengarsipkan berkas lama.
  */
 return [
-    'versi' => '1.3',
+    'versi' => '1.4',
     'background' => 'assets/templates/background.png',
     'font' => [
         'serif' => 'tinos',
@@ -151,7 +152,7 @@ return [
             'x' => 258.9,
             'y' => 193.14,
             'align' => 'C',
-            'font' => 'sans',
+            'font' => 'serif_bold',
             'size' => 15,
         ],
         'jabatan_penanda_tangan' => [

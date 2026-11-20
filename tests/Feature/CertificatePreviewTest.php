@@ -4,14 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\Services\LayoutConfig;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 final class CertificatePreviewTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Halaman pratinjau ikut shell aplikasi, jadi butuh sesi seperti halaman lain.
+        $this->actingAs(User::factory()->create());
 
         // Font inti "times" membuat isi PDF terbaca sebagai teks di tes tanpa
         // bergantung pada berkas Tinos yang tidak ikut di repo.
@@ -25,6 +32,14 @@ final class CertificatePreviewTest extends TestCase
         }
 
         $this->app->instance(LayoutConfig::class, new LayoutConfig($layouts));
+    }
+
+    public function test_requires_login_like_the_rest_of_the_app(): void
+    {
+        auth()->logout();
+
+        $this->get('/pratinjau')->assertRedirect('/masuk');
+        $this->get('/pratinjau/pdf')->assertRedirect('/masuk');
     }
 
     public function test_page_shows_preview_iframe_for_default_layout(): void

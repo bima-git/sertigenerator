@@ -263,6 +263,33 @@ final class LayoutConfigTest extends TestCase
         new LayoutConfig(['seminar' => $this->layout()], ['seminar-1.1' => $arsip]);
     }
 
+    public function test_bootcamp_signature_uses_serif_bold_like_the_sample(): void
+    {
+        $layout = $this->shipped('bootcamp');
+
+        $this->assertSame('serif_bold', $layout['elements']['penanda_tangan']['font']);
+        $this->assertSame('serif_bold', $this->shipped('seminar')['elements']['penanda_tangan']['font']);
+    }
+
+    public function test_archived_versions_are_never_newer_than_active_ones(): void
+    {
+        foreach (['seminar', 'bootcamp'] as $jenis) {
+            $aktif = $this->shipped($jenis)['versi'];
+
+            foreach (glob(dirname(__DIR__, 3)."/config/layout/arsip/{$jenis}-*.php") ?: [] as $berkas) {
+                $versiArsip = basename($berkas, '.php');
+                $versiArsip = substr($versiArsip, strlen($jenis) + 1);
+
+                // Arsip boleh sama dengan versi aktif selama layout belum berubah lagi.
+                $this->assertLessThanOrEqual(
+                    0,
+                    version_compare($versiArsip, $aktif),
+                    "Arsip {$jenis} {$versiArsip} tidak boleh lebih baru dari versi aktif {$aktif}.",
+                );
+            }
+        }
+    }
+
     public function test_shipped_archives_match_their_active_versions(): void
     {
         foreach (['seminar' => '1.2', 'bootcamp' => '1.3'] as $jenis => $versi) {
@@ -294,7 +321,7 @@ final class LayoutConfigTest extends TestCase
 
         $config = new LayoutConfig(['bootcamp' => $layout]);
 
-        $this->assertSame('1.3', $config->get('bootcamp')['versi']);
+        $this->assertSame('1.4', $config->get('bootcamp')['versi']);
     }
 
     public function test_bootcamp_has_no_number_or_qr_element(): void
