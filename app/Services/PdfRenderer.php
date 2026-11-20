@@ -26,15 +26,17 @@ class PdfRenderer
      * Merender sertifikat menjadi format biner PDF.
      *
      * @param  string  $mode  'terbit', 'pratinjau', atau 'dibatalkan'
+     * @param  string|null  $watermark  Teks tanda air bebas; null berarti bawaan mode.
      * @return string Konten biner PDF
      */
-    public function render(Certificate $certificate, string $mode = 'terbit'): string
+    public function render(Certificate $certificate, string $mode = 'terbit', ?string $watermark = null): string
     {
         return $this->renderer->render(
             (string) $certificate->jenis,
             $this->mapper->map($certificate),
             CertificateMode::fromInput($mode),
             versiLayout: $certificate->versi_layout,
+            watermarkText: $watermark,
         );
     }
 }

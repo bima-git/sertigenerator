@@ -36,6 +36,7 @@ final class CertificateRenderer
         ?string $backgroundPath = null,
         bool $withGuides = false,
         ?string $versiLayout = null,
+        ?string $watermarkText = null,
     ): string {
         $layout = $this->layouts->get($jenis, $versiLayout);
 
@@ -105,7 +106,7 @@ final class CertificateRenderer
             $this->drawLines($pdf, $element, $hasil->lines, $hasil->size, $family, $style);
         }
 
-        $this->drawWatermark($pdf, $layout, $mode);
+        $this->drawWatermark($pdf, $mode, $watermarkText);
 
         return (string) $pdf->Output('sertifikat.pdf', 'S');
     }
@@ -428,12 +429,25 @@ final class CertificateRenderer
         return (string) config('certificate.qr.url');
     }
 
-    private function drawWatermark(TCPDF $pdf, array $layout, CertificateMode $mode): void
+    private function drawWatermark(TCPDF $pdf, CertificateMode $mode, ?string $teksBebas): void
     {
         /** @var array{text: string, color: array{0: int, 1: int, 2: int}, alpha: float, size: float, angle: float}|null $pengaturan */
         $pengaturan = config("certificate.watermark.{$mode->value}");
+        $teks = trim((string) $teksBebas);
 
-        if (! is_array($pengaturan)) {
+        if ($teks === '') {
+            // Tanpa teks bebas, mode terbit memang tidak diberi tanda air.
+            if ($mode === CertificateMode::Terbit) {
+                return;
+            }
+
+            $teks = (string) ($pengaturan['text'] ?? '');
+        } elseif (! is_array($pengaturan)) {
+            // Teks bebas pada mode terbit memakai gaya netral milik pratinjau.
+            $pengaturan = config('certificate.watermark.pratinjau');
+        }
+
+        if (! is_array($pengaturan) || $teks === '') {
             return;
         }
 
@@ -445,7 +459,6 @@ final class CertificateRenderer
         $tengahX = $pdf->getPageWidth() / 2;
         $tengahY = $pdf->getPageHeight() / 2;
         $ukuran = (float) $pengaturan['size'];
-        $teks = $pengaturan['text'];
 
         $pdf->setAlpha((float) $pengaturan['alpha'], 'Normal', (float) $pengaturan['alpha']);
         $pdf->SetTextColor(...$pengaturan['color']);

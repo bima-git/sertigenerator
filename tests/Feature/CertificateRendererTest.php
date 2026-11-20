@@ -195,6 +195,45 @@ final class CertificateRendererTest extends TestCase
         $this->assertStringContainsString('DIBATALKAN', $teks);
     }
 
+    public function test_custom_watermark_replaces_mode_default_text(): void
+    {
+        $teks = $this->textOf($this->renderer->render(
+            'seminar',
+            $this->seminarData(),
+            CertificateMode::Pratinjau,
+            withBackground: false,
+            watermarkText: 'SALINAN ARSIP',
+        ));
+
+        $this->assertStringContainsString('SALINAN ARSIP', $teks);
+        $this->assertStringNotContainsString('PRATINJAU', $teks);
+    }
+
+    public function test_custom_watermark_can_mark_terbit_mode(): void
+    {
+        $teks = $this->textOf($this->renderer->render(
+            'seminar',
+            $this->seminarData(),
+            withBackground: false,
+            watermarkText: 'SALINAN',
+        ));
+
+        $this->assertStringContainsString('SALINAN', $teks);
+    }
+
+    public function test_blank_custom_watermark_keeps_mode_default(): void
+    {
+        $teks = $this->textOf($this->renderer->render(
+            'seminar',
+            $this->seminarData(),
+            CertificateMode::Pratinjau,
+            withBackground: false,
+            watermarkText: '   ',
+        ));
+
+        $this->assertStringContainsString('PRATINJAU', $teks);
+    }
+
     public function test_renders_bootcamp_paragraph_from_template(): void
     {
         $pdf = $this->renderer->render('bootcamp', [

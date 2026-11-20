@@ -287,7 +287,8 @@ Pengaturan di `config/certificate.php`:
 - `text_color` — warna teks utama `[17,17,17]`.
 - `qr.url` — satu alamat untuk semua sertifikat: `https://xcode.co.id/cekkodesertifikat`.
 - Tampil atau tidaknya QR diatur lewat data event `pakai_qr` (`CertificateDataMapper`), bukan dengan mengubah alamat; pemanggil juga boleh mengirim `pakai_qr => false` untuk melewati elemen QR tanpa menyunting layout.
-- `watermark.pratinjau` / `watermark.dibatalkan` — teks, warna, alpha, ukuran (90 pt), sudut (45°). Nilainya masih perkiraan dan nanti akan menjadi input teks bebas, sehingga watermark tidak lagi terbatas pada dua label itu.
+- `watermark.pratinjau` / `watermark.dibatalkan` — teks bawaan, warna, alpha, ukuran (90 pt), sudut (45°). Nilai `text` boleh diganti kalimat apa pun.
+- Teks bebas dari form dikirim lewat parameter render dan menimpa `text`: `PdfRenderer::render($certificate, 'pratinjau', 'SALINAN ARSIP')`. Gaya mengikuti blok mode yang dipakai; mode `terbit` tanpa teks bebas tidak diberi tanda air, sedangkan `terbit` dengan teks bebas memakai gaya netral `pratinjau`. Teks kosong/spasi dianggap tidak diisi, sehingga default mode tetap berlaku.
 
 Metadata PDF: `SetTitle('Sertifikat {jenis} - {nama peserta} ({mode})')` memenuhi PD-12, dan `SetSubject('Status dokumen: TERBIT|PRATINJAU|DIBATALKAN')` disimpan tanpa kompresi agar status bisa dicek mesin tanpa membongkar stream. TCPDF menulis metadata sebagai UTF-16BE ber-BOM, jadi pembaca otomatis perlu mendekodenya.
 
@@ -295,7 +296,7 @@ Metadata PDF: `SetTitle('Sertifikat {jenis} - {nama peserta} ({mode})')` memenuh
 
 ## 9. Kontrak Integrasi
 
-**Ke Bima (penerbitan & riwayat):** jangan panggil `CertificateRenderer` langsung. Gunakan `App\Services\PdfRenderer::render(Certificate $certificate, string $mode = 'terbit')`. Renderer memilih layout dari `versi_layout` sertifikat, jadi unduh ulang otomatis mengikuti versi saat terbit.
+**Ke Bima (penerbitan & riwayat):** jangan panggil `CertificateRenderer` langsung. Gunakan `App\Services\PdfRenderer::render(Certificate $certificate, string $mode = 'terbit', ?string $watermark = null)`. Parameter ketiga opsional: isi dengan teks dari form bila ingin tanda air khusus, atau biarkan `null` agar memakai bawaan mode (`PRATINJAU`/`DIBATALKAN`). Pemanggil lama tidak perlu diubah. Renderer memilih layout dari `versi_layout` sertifikat, jadi unduh ulang otomatis mengikuti versi saat terbit.
 
 **Ke Giska (frontend):** pratinjau di browser memakai `GET /pratinjau` (halaman) dan `GET /pratinjau/pdf?jenis=&sampel=&mode=&guides=` (PDF inline). Keduanya berada di dalam grup `auth` + `active` seperti halaman lain, dan halaman memakai shell `layouts.app` (sidebar, komponen `x-page-header`, `card`, `select.input`, `switch`, `badge`, `btn`). Tombol pratinjau pada form penerbitan tetap memakai `POST /pratinjau` milik Bima (`issue.preview`) karena memakai data form, bukan data contoh.
 
@@ -307,7 +308,8 @@ Metadata PDF: `SetTitle('Sertifikat {jenis} - {nama peserta} ({mode})')` memenuh
 
 | Berkas | Cakupan |
 |---|---|
-| `tests/Feature/CertificateRendererTest.php` | Teks & elemen seminar/bootcamp, QR, garis bantu, mode watermark, layout arsip, file output, metadata judul, nama 70 karakter & judul panjang tetap satu halaman |
+| `tests/Feature/CertificateRendererTest.php` | Teks & elemen seminar/bootcamp, QR, garis bantu, mode watermark, teks watermark bebas, layout arsip, file output, metadata judul, nama 70 karakter & judul panjang tetap satu halaman |
+| `tests/Feature/PdfRendererTest.php` | Kontrak `PdfRenderer::render()` meneruskan teks watermark dari form dan memakai default mode saat `null` |
 | `tests/Unit/Services/LayoutConfigTest.php` | Validasi layout, pemilihan versi arsip, fallback, font penanda tangan, versi arsip |
 | `tests/Unit/Pdf/CertificateDataMapperTest.php` | Pemetaan Certificate → data layout |
 | `tests/Unit/Services/TextFitterTest.php` | Pengecilan font & pemecahan baris nama panjang |
@@ -323,7 +325,7 @@ Perintah: `php artisan test --filter='CertificateRendererTest|LayoutConfigTest'`
 
 1. **Seminar tanpa nomor** — `RenderException` saat `bernomor = false`; perlu keputusan coach.
 2. **Tujuan QR** — sudah diputuskan satu alamat untuk semua sertifikat, `https://xcode.co.id/cekkodesertifikat`; mode per nomor dihapus dari konfigurasi.
-3. **Watermark** — ukuran/warna/alpha masih perkiraan; akan menjadi input teks bebas yang bisa diganti-ganti, jadi jangan dikunci ke dua label `PRATINJAU`/`DIBATALKAN`.
+3. **Watermark** — teksnya sudah bebas lewat konfigurasi atau parameter render, tetapi ukuran/warna/alpha masih perkiraan `[KALIBRASI]` terhadap contoh asli.
 4. **Contoh asli tidak masuk repo** — empat PDF contoh ada di root dan belum di-commit, sehingga kalibrasi belum bisa diuji otomatis di CI.
 5. **Halaman pratinjau wajib login** — sudah memakai shell `layouts.app`, sehingga tidak bisa dibuka tanpa sesi. Bila nanti perlu diakses publik, buat layout tamu terpisah, bukan melonggarkan grup `auth`.
 6. **Font sumber** — `.ttf` tidak dibundel; setiap mesin/runner baru wajib menjalankan `certificates:import-fonts --download` sebelum render final.
