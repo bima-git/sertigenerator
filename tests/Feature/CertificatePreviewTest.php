@@ -17,8 +17,8 @@ final class CertificatePreviewTest extends TestCase
     {
         parent::setUp();
 
-        // Halaman pratinjau ikut shell aplikasi, jadi butuh sesi seperti halaman lain.
-        $this->actingAs(User::factory()->create());
+        // Halaman pratinjau ikut shell aplikasi dan khusus admin (Uji Layout).
+        $this->actingAs(User::factory()->admin()->create());
 
         // Font inti "times" membuat isi PDF terbaca sebagai teks di tes tanpa
         // bergantung pada berkas Tinos yang tidak ikut di repo.
@@ -32,6 +32,14 @@ final class CertificatePreviewTest extends TestCase
         }
 
         $this->app->instance(LayoutConfig::class, new LayoutConfig($layouts));
+    }
+
+    public function test_operator_is_forbidden(): void
+    {
+        $this->actingAs(User::factory()->operator()->create());
+
+        $this->get('/pratinjau')->assertForbidden();
+        $this->get('/pratinjau/pdf')->assertForbidden();
     }
 
     public function test_requires_login_like_the_rest_of_the_app(): void
