@@ -85,8 +85,11 @@ Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function 
 |--------------------------------------------------------------------------
 | Pratinjau desain sertifikat (Modul Ifan)
 | Hanya memakai data contoh, tidak mengakses basis data penerbitan.
+| Khusus admin: ini halaman Uji Layout (Design System 3.4).
 |--------------------------------------------------------------------------
 */
-Route::get('/pratinjau', [CertificatePreviewController::class, 'index'])->name('pratinjau');
-Route::get('/pratinjau/pdf', [CertificatePreviewController::class, 'pdf'])->name('pratinjau.pdf');
+Route::middleware('can:admin')->group(function () {
+    Route::get('/pratinjau', [CertificatePreviewController::class, 'index'])->name('pratinjau');
+    Route::get('/pratinjau/pdf', [CertificatePreviewController::class, 'pdf'])->name('pratinjau.pdf');
+});
 });
