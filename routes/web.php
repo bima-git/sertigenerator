@@ -27,8 +27,7 @@ Route::get('/api/me', [AuthController::class, 'me'])->name('api.me');
 |--------------------------------------------------------------------------
 | Halaman (modul Giska) dan aksi penerbitan (modul Bima)
 |--------------------------------------------------------------------------
-| Nama rute mengikuti Design System bagian 3. Halaman admin masih closure
-| baca-saja; aksi simpan/ubah kegiatan dan pengguna menunggu modul Akmal.
+| Nama rute mengikuti Design System bagian 3. Kegiatan dan Pengguna modul Akmal.
 */
 
 /* Tanpa sesi (Design System 3.1) */
@@ -78,7 +77,8 @@ Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function 
             ->when($r->query('aksi'), fn ($q, $a) => $q->whereIn('aksi', (array) $a))
             ->latest('created_at')->paginate(25)->withQueryString(),
     ]))->name('audit');
-    Route::view('/uji-layout', 'admin.layout-test')->name('layout.test');
+    // Uji Layout dikerjakan Ifan di /pratinjau (PDF contoh, garis bantu, tanda air).
+    Route::redirect('/uji-layout', '/pratinjau')->name('layout.test');
 });
 
 /*

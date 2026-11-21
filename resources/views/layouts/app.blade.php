@@ -8,7 +8,7 @@
     $adminNav = [
         ['admin.events.index', 'Kegiatan', 'ph-calendar-dots', 'admin/kegiatan*'],
         ['admin.users.index', 'Pengguna', 'ph-users-three', 'admin/pengguna*'],
-        ['admin.layout.test', 'Uji Layout', 'ph-ruler', 'admin/uji-layout*'],
+        ['pratinjau', 'Uji Layout', 'ph-ruler', 'pratinjau*'],
         ['admin.audit', 'Audit', 'ph-list-magnifying-glass', 'admin/audit*'],
     ];
     $initials = collect(explode(' ', $me->nama))->take(2)->map(fn ($p) => mb_substr($p, 0, 1))->join('');
