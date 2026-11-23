@@ -69,43 +69,6 @@ final class CertificateRendererTest extends TestCase
         $this->assertStringContainsString('Direktur', $teks);
     }
 
-    public function test_xcode_brand_uses_red_ribbon_and_xcode_domain(): void
-    {
-        $teks = $this->textOf($this->renderer->render(
-            'seminar',
-            $this->seminarData() + ['penerbit' => 'Xcodetraining'],
-            withBackground: false,
-        ));
-
-        $this->assertStringContainsString('xcode.or.id', $teks);
-        $this->assertStringNotContainsString('siberexpert.com', $teks);
-    }
-
-    public function test_siberexpert_brand_uses_its_ribbon_and_domain(): void
-    {
-        $teks = $this->textOf($this->renderer->render(
-            'seminar',
-            $this->seminarData() + ['penerbit' => 'SiberExpert'],
-            withBackground: false,
-        ));
-
-        $this->assertStringContainsString('siberexpert.com', $teks);
-        $this->assertStringNotContainsString('xcode.or.id', $teks);
-        $this->assertFileExists(base_path((string) config('certificate.branding.siberexpert.logo')));
-        $this->assertFileExists(base_path((string) config('certificate.branding.default.logo')));
-    }
-
-    public function test_brand_can_be_derived_from_number_for_legacy_certificates(): void
-    {
-        $data = $this->seminarData();
-        $data['nomor_lengkap'] = '78/001/001/SiberExpert/VI/2026';
-
-        $teks = $this->textOf($this->renderer->render('seminar', $data, withBackground: false));
-
-        $this->assertStringContainsString('siberexpert.com', $teks);
-        $this->assertStringNotContainsString('xcode.or.id', $teks);
-    }
-
     public function test_brand_watermark_is_tiled_behind_content(): void
     {
         $teks = $this->textOf($this->renderer->render('seminar', $this->seminarData(), withBackground: false));

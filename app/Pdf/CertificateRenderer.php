@@ -39,7 +39,6 @@ final class CertificateRenderer
         ?string $watermarkText = null,
     ): string {
         $layout = $this->layouts->get($jenis, $versiLayout);
-        $brand = $this->brand($data);
 
         $pdf = $this->newDocument($layout, $jenis, $mode, (string) ($data['nama_peserta'] ?? ''));
 
@@ -60,7 +59,6 @@ final class CertificateRenderer
 
         foreach ($layout['elements'] as $nama => $element) {
             $nama = (string) $nama;
-            $element = $this->brandElement($element, $brand);
 
             if ($element['type'] === 'image') {
                 $this->drawImage($pdf, $element);
@@ -432,68 +430,6 @@ final class CertificateRenderer
     private function qrContent(): string
     {
         return (string) config('certificate.qr.url');
-    }
-
-    /**
-     * Pita dan domain mengikuti penerbit. Hanya elemen bertanda 'brand' yang ditimpa,
-     * sehingga layout arsip tetap memakai logo dan domain saat sertifikat diterbitkan.
-     *
-     * @param  array<string, mixed>  $data
-     * @return array{logo: string, domain: string}
-     */
-    private function brand(array $data): array
-    {
-        $default = (array) config('certificate.branding.default', []);
-        $bawaan = [
-            'logo' => (string) ($default['logo'] ?? 'assets/templates/logo-xcode.png'),
-            'domain' => (string) ($default['domain'] ?? 'xcode.or.id'),
-        ];
-
-        if (! $this->isSiberExpert($data)) {
-            return $bawaan;
-        }
-
-        $siber = (array) config('certificate.branding.siberexpert', []);
-
-        return [
-            'logo' => (string) ($siber['logo'] ?? $bawaan['logo']),
-            'domain' => (string) ($siber['domain'] ?? $bawaan['domain']),
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    private function isSiberExpert(array $data): bool
-    {
-        $penerbit = strtolower(trim((string) ($data['penerbit'] ?? '')));
-
-        if ($penerbit !== '') {
-            return str_contains($penerbit, 'siber');
-        }
-
-        // Sertifikat lama tidak menyimpan penerbit; nomor resmi memuatnya di segmen keempat.
-        $segmen = explode('/', (string) ($data['nomor_lengkap'] ?? ''));
-
-        return str_contains(strtolower($segmen[3] ?? ''), 'siber');
-    }
-
-    /**
-     * @param  array<string, mixed>  $element
-     * @param  array{logo: string, domain: string}  $brand
-     * @return array<string, mixed>
-     */
-    private function brandElement(array $element, array $brand): array
-    {
-        $slot = $element['brand'] ?? null;
-
-        if ($slot === 'logo') {
-            $element['path'] = $brand['logo'];
-        } elseif ($slot === 'domain') {
-            $element['text'] = $brand['domain'];
-        }
-
-        return $element;
     }
 
     /**

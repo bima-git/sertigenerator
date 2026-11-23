@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 /*
  * Layout sertifikat seminar/webinar.
- * Versi 1.3: pita mengikuti penerbit (XCODE/SiberExpert), nama lebih besar,
- * garis nama lebih tipis, tanda tangan dinaikkan, nomor/tanggal diperbesar.
+ * Versi 1.3: pita XCODE di-auto-crop agar menempel ke ornamen latar, nama
+ * lebih besar, garis nama lebih tipis, garis tanda tangan diturunkan, nomor
+ * dan tanggal diperbesar.
  * Versi 1.2: pita logo, garis bawah nama, dan garis tanda tangan diambil dari
  * sampel asli "Syafrizal Devan Pradana.pdf". Versi 1.1: koordinat diukur dari
  * sampel itu (halaman 297,13 x 210,08 mm).
@@ -37,15 +38,14 @@ return [
             'h' => 38.38,
             'optional' => true,
         ],
-        // Pita mengikuti penerbit; padding putih di kiri pita dibuat transparan
-        // agar ornamen abu-abu latar menyambung tanpa celah.
+        // Pita XCODE sudah di-auto-crop (tanpa margin putih kiri/kanan), jadi
+        // ornamen latar menyambung ke tepi pita dan posisinya tetap di pojok kanan.
         'logo' => [
             'type' => 'image',
-            'brand' => 'logo',
             'path' => 'assets/templates/logo-xcode.png',
-            'x' => 210,
+            'x' => 235.89,
             'y' => 0,
-            'w' => 75,
+            'w' => 46.51,
             'h' => 62.5,
             'optional' => true,
         ],
@@ -84,15 +84,12 @@ return [
             'line_h' => 7.5,
         ],
         'domain' => [
-            'type' => 'fit',
-            'brand' => 'domain',
+            'type' => 'text',
             'text' => 'xcode.or.id',
             'x' => 240.88,
             'y' => 71.13,
             'align' => 'L',
             'size' => 23,
-            'min_size' => 14,
-            'max_w' => 54,
         ],
         'nomor' => [
             'type' => 'fit',

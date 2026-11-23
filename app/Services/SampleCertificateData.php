@@ -40,8 +40,6 @@ final class SampleCertificateData
                     'judul_cetak' => $judul,
                     'nomor_lengkap' => $nomor(3),
                     'tanggal_kota' => $tanggal,
-                    'kode' => '23',
-                    'penerbit' => 'SiberExpert',
                 ],
             ],
             [
@@ -52,8 +50,6 @@ final class SampleCertificateData
                     'judul_cetak' => $judul,
                     'nomor_lengkap' => $nomor(9),
                     'tanggal_kota' => $tanggal,
-                    'kode' => '23',
-                    'penerbit' => 'SiberExpert',
                 ],
             ],
             [
@@ -64,8 +60,6 @@ final class SampleCertificateData
                     'judul_cetak' => $judul,
                     'nomor_lengkap' => $nomor(15),
                     'tanggal_kota' => $tanggal,
-                    'kode' => '23',
-                    'penerbit' => 'SiberExpert',
                 ],
             ],
             [
@@ -76,8 +70,6 @@ final class SampleCertificateData
                     'ujian' => 'Fullstack Web Development',
                     'bootcamp' => 'X-Code Bootcamp #14',
                     'tanggal_kota' => $tanggal,
-                    'kode' => '15',
-                    'penerbit' => 'Bootcamp',
                 ],
             ],
         ];

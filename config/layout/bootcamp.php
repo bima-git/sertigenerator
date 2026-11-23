@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 /*
  * Layout sertifikat bootcamp.
- * Versi 1.5: pita mengikuti penerbit, nama lebih besar, garis nama lebih tipis,
- * tanda tangan dinaikkan, dan tanggal diperbesar.
+ * Versi 1.5: pita XCODE di-auto-crop, nama lebih besar, garis nama lebih tipis,
+ * garis tanda tangan diturunkan, dan tanggal diperbesar.
  * Versi 1.4: nama penanda tangan memakai serif bold seperti sampel "Taufik
  * Hidayat.pdf" (sebelumnya sans). Versi 1.3: pita logo, garis bawah nama, dan garis tanda tangan mengikuti
  * template seminar "Syafrizal Devan Pradana.pdf". Versi 1.2: paragraf memecah
@@ -36,13 +36,13 @@ return [
             'h' => 38.38,
             'optional' => true,
         ],
+        // Pita XCODE sudah di-auto-crop (tanpa margin putih kiri/kanan).
         'logo' => [
             'type' => 'image',
-            'brand' => 'logo',
             'path' => 'assets/templates/logo-xcode.png',
-            'x' => 210,
+            'x' => 235.89,
             'y' => 0,
-            'w' => 75,
+            'w' => 46.51,
             'h' => 62.5,
             'optional' => true,
         ],
@@ -89,15 +89,12 @@ return [
             'max_w' => 212,
         ],
         'domain' => [
-            'type' => 'fit',
-            'brand' => 'domain',
+            'type' => 'text',
             'text' => 'xcode.or.id',
             'x' => 240.88,
             'y' => 71.13,
             'align' => 'L',
             'size' => 23,
-            'min_size' => 14,
-            'max_w' => 54,
         ],
         'script_sertifikat' => [
             'type' => 'fit',

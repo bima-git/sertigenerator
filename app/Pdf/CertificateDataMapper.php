@@ -35,10 +35,6 @@ final class CertificateDataMapper
             'nama_peserta' => (string) $certificate->nama_peserta,
             'tanggal_kota' => $this->tanggalKota($certificate, $cetak),
             'pakai_qr' => $this->pakaiQr($cetak, $event?->pakai_qr),
-            // Dipakai renderer untuk memilih pita dan domain; sertifikat lama
-            // tanpa event tetap dikenali dari segmen penerbit pada nomor.
-            'kode' => (string) ($event?->kode ?? ''),
-            'penerbit' => (string) ($event?->penerbit ?? ''),
         ];
 
         $nomor = $this->teks($certificate->nomor_lengkap);
