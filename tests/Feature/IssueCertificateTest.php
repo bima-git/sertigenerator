@@ -247,4 +247,90 @@ class IssueCertificateTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['tanggal_selesai']);
     }
+
+    /**
+     * BUG-2: Memastikan penerbitan ditolak (HTTP 422) jika kegiatan nonaktif.
+     */
+    public function test_cannot_issue_certificate_for_inactive_event(): void
+    {
+        $this->seminarEvent->update(['aktif' => false]);
+
+        $payload = [
+            'jenis'          => 'seminar',
+            'event_id'       => $this->seminarEvent->id,
+            'nama_peserta'   => 'Peserta Kegiatan Nonaktif',
+            'tanggal_terbit' => '2026-10-24',
+            'seri'           => 1,
+        ];
+
+        $response = $this->actingAs($this->user)->postJson(route('issue.store'), $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['event_id']);
+        $this->assertStringContainsString('tidak aktif', $response->json('errors.event_id.0'));
+        $this->assertDatabaseCount('certificates', 0);
+    }
+
+    /**
+     * Memastikan penerbitan ditolak (HTTP 422) jika jenis formulir tidak sesuai dengan jenis event.
+     */
+    public function test_cannot_issue_certificate_for_mismatched_event_jenis(): void
+    {
+        // Event bootcamp tapi dikirim sebagai seminar
+        $payload = [
+            'jenis'          => 'seminar',
+            'event_id'       => $this->bootcampEvent->id,
+            'nama_peserta'   => 'Peserta Mismatch',
+            'tanggal_terbit' => '2026-10-24',
+            'seri'           => 1,
+        ];
+
+        $response = $this->actingAs($this->user)->postJson(route('issue.store'), $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['event_id']);
+        $this->assertStringContainsString('tidak sesuai', $response->json('errors.event_id.0'));
+        $this->assertDatabaseCount('certificates', 0);
+    }
+
+    /**
+     * BUG-3: Memastikan pratinjau ditolak (HTTP 422) jika kegiatan nonaktif.
+     */
+    public function test_cannot_preview_certificate_for_inactive_event(): void
+    {
+        $this->seminarEvent->update(['aktif' => false]);
+
+        $payload = [
+            'jenis'          => 'seminar',
+            'event_id'       => $this->seminarEvent->id,
+            'nama_peserta'   => 'Peserta Pratinjau Nonaktif',
+            'tanggal_terbit' => '2026-10-24',
+        ];
+
+        $response = $this->actingAs($this->user)->postJson(route('issue.preview'), $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['event_id']);
+        $this->assertStringContainsString('tidak aktif', $response->json('errors.event_id.0'));
+    }
+
+    /**
+     * BUG-3: Memastikan pratinjau ditolak (HTTP 422) jika jenis kegiatan tidak sesuai formulir.
+     */
+    public function test_cannot_preview_certificate_for_mismatched_event_jenis(): void
+    {
+        // Event bootcamp tapi dipratinjau sebagai seminar
+        $payload = [
+            'jenis'          => 'seminar',
+            'event_id'       => $this->bootcampEvent->id,
+            'nama_peserta'   => 'Peserta Pratinjau Mismatch',
+            'tanggal_terbit' => '2026-10-24',
+        ];
+
+        $response = $this->actingAs($this->user)->postJson(route('issue.preview'), $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['event_id']);
+        $this->assertStringContainsString('tidak sesuai', $response->json('errors.event_id.0'));
+    }
 }

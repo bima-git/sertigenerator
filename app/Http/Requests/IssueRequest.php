@@ -70,4 +70,23 @@ class IssueRequest extends FormRequest
             'tanggal_selesai.after_or_equal'    => 'Tanggal selesai tidak boleh sebelum tanggal mulai.',
         ];
     }
+
+    /**
+     * Validasi lanjutan untuk memeriksa status aktif dan kesesuaian jenis kegiatan.
+     */
+    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Validation\Validator $validator) {
+            if ($this->filled('event_id')) {
+                $event = \App\Models\Event::query()->find($this->input('event_id'));
+                if ($event) {
+                    if (! $event->aktif) {
+                        $validator->errors()->add('event_id', "Kegiatan [{$event->judul}] sudah tidak aktif.");
+                    } elseif ($this->filled('jenis') && $event->jenis !== $this->input('jenis')) {
+                        $validator->errors()->add('event_id', 'Jenis kegiatan tidak sesuai dengan jenis formulir.');
+                    }
+                }
+            }
+        });
+    }
 }

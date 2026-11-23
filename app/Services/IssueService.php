@@ -133,6 +133,14 @@ class IssueService
         /** @var Event $event */
         $event = Event::query()->whereKey($data['event_id'])->firstOrFail();
 
+        if (! $event->aktif) {
+            throw new InvalidArgumentException("Kegiatan [{$event->judul}] sudah tidak aktif.");
+        }
+
+        if ($event->jenis !== $data['jenis']) {
+            throw new InvalidArgumentException("Jenis kegiatan tidak sesuai dengan data formulir.");
+        }
+
         $date = Carbon::parse($data['tanggal_terbit'], 'Asia/Jakarta');
         $tahun = (int) $date->format('Y');
 

@@ -15,7 +15,7 @@ final class MakeSampleCertificatesCommandTest extends TestCase
     {
         parent::setUp();
 
-        $this->folder = storage_path('framework/testing/samples');
+        $this->folder = storage_path('framework/testing/samples_' . uniqid());
         File::deleteDirectory($this->folder);
     }
 

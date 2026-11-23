@@ -107,7 +107,13 @@ class IssueController extends Controller
         $user = auth()->user();
         abort_unless($user, 401);
 
-        $result = $issueService->issue($request->validated(), $user);
+        try {
+            $result = $issueService->issue($request->validated(), $user);
+        } catch (\InvalidArgumentException $e) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'event_id' => [$e->getMessage()],
+            ]);
+        }
 
         return response($result['pdf'], 200, [
             'Content-Type'         => 'application/pdf',
@@ -123,7 +129,13 @@ class IssueController extends Controller
      */
     public function preview(IssueRequest $request, IssueService $issueService): Response
     {
-        $result = $issueService->preview($request->validated());
+        try {
+            $result = $issueService->preview($request->validated());
+        } catch (\InvalidArgumentException $e) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'event_id' => [$e->getMessage()],
+            ]);
+        }
 
         return response($result['pdf'], 200, [
             'Content-Type'        => 'application/pdf',
