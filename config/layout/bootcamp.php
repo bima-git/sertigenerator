@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 /*
  * Layout sertifikat bootcamp.
+ * Versi 1.5: pita XCODE di-auto-crop, nama lebih besar, garis nama lebih tipis,
+ * garis tanda tangan diturunkan, dan tanggal diperbesar.
  * Versi 1.4: nama penanda tangan memakai serif bold seperti sampel "Taufik
  * Hidayat.pdf" (sebelumnya sans). Versi 1.3: pita logo, garis bawah nama, dan garis tanda tangan mengikuti
  * template seminar "Syafrizal Devan Pradana.pdf". Versi 1.2: paragraf memecah
@@ -14,7 +16,7 @@ declare(strict_types=1);
  * Setiap perubahan koordinat wajib menaikkan "versi" dan mengarsipkan berkas lama.
  */
 return [
-    'versi' => '1.4',
+    'versi' => '1.5',
     'background' => 'assets/templates/background.png',
     'font' => [
         'serif' => 'tinos',
@@ -34,12 +36,13 @@ return [
             'h' => 38.38,
             'optional' => true,
         ],
+        // Pita XCODE sudah di-auto-crop (tanpa margin putih kiri/kanan).
         'logo' => [
             'type' => 'image',
-            'path' => 'assets/templates/logo.png',
-            'x' => 210,
+            'path' => 'assets/templates/logo-xcode.png',
+            'x' => 235.89,
             'y' => 0,
-            'w' => 75,
+            'w' => 46.51,
             'h' => 62.5,
             'optional' => true,
         ],
@@ -48,12 +51,12 @@ return [
             'x' => 45.96,
             'y' => 150.93,
             'w' => 148.7,
-            'tebal' => 1.12,
+            'tebal' => 0.42,
         ],
         'garis_tanda_tangan' => [
             'type' => 'line',
             'x' => 230.25,
-            'y' => 185.79,
+            'y' => 189.2,
             'w' => 57.11,
             'tebal' => 0.53,
         ],
@@ -119,11 +122,11 @@ return [
             'x' => 120,
             'y' => 145.48,
             'align' => 'C',
-            'size' => 28,
-            'min_size' => 16,
+            'size' => 35,
+            'min_size' => 20,
             'max_w' => 148,
             'max_lines' => 2,
-            'line_h' => 8,
+            'line_h' => 10,
         ],
         'tanggal' => [
             'type' => 'text',
@@ -131,7 +134,7 @@ return [
             'x' => 258.9,
             'y' => 159.61,
             'align' => 'C',
-            'size' => 14,
+            'size' => 16,
         ],
         'paragraf' => [
             'type' => 'fit',
@@ -150,7 +153,7 @@ return [
             'type' => 'text',
             'text' => 'Cantika',
             'x' => 258.9,
-            'y' => 193.14,
+            'y' => 194.8,
             'align' => 'C',
             'font' => 'serif_bold',
             'size' => 15,
@@ -159,7 +162,7 @@ return [
             'type' => 'text',
             'text' => 'Direktur Operasional',
             'x' => 258.9,
-            'y' => 198.75,
+            'y' => 200.0,
             'align' => 'C',
             'size' => 13,
         ],
