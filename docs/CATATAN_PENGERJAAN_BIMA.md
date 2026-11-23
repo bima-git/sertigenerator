@@ -113,22 +113,32 @@ Berikut detail teknis rekonsiliasi yang dilakukan untuk mencegah konflik dan men
 
 ---
 
+### I. Resolusi Audit Integrasi Akmal (BUG-2 & BUG-3) — *23 November 2026*
+Menindaklanjuti audit integrasi dari Akmal pasca-merge PR #10 dan #11:
+1. **BUG-2 (Penerbitan saat Event Nonaktif):**
+   * Di `IssueRequest`: Ditambahkan validasi lanjutan `withValidator()` yang memeriksa apakah `event` berstatus `aktif`. Jika nonaktif, form langsung ditolak dengan HTTP 422 (*"Kegiatan [...] sudah tidak aktif."*).
+   * Di `IssueController@store`: Ditambahkan blok `try-catch` terhadap `InvalidArgumentException` yang melempar `ValidationException` (HTTP 422), sehingga tidak akan pernah melempar HTTP 500 saat terjadi *race condition*.
+2. **BUG-3 (Validasi Event pada Preview PDF & Kesesuaian Jenis Event):**
+   * Di `IssueService@preview`: Ditambahkan guard `if (! $event->aktif)` dan `if ($event->jenis !== $data['jenis'])` identik dengan alur `issue()`.
+   * Di `IssueRequest`: Ditambahkan validasi kesesuaian jenis formulir dengan jenis kegiatan pada basis data.
+   * Di `IssueController@preview`: Ditangani dengan konversi ke `ValidationException` (HTTP 422).
+3. **Automated Regression Tests:**
+   * Ditambahkan 4 feature test baru di `IssueCertificateTest` yang menguji penolakan kegiatan nonaktif dan ketidakcocokan jenis pada alur terbit maupun pratinjau.
+
+---
+
 ## 4. Hasil Pengujian Otomatis Keseluruhan (*Automated Tests*)
 
-Pengujian dijalankan melalui `php artisan test`. Seluruh **61 pengujian berstatus 100% HIJAU (PASS) dengan 241 assertions**.
+Pengujian dijalankan melalui `php artisan test`. Seluruh **187 pengujian berstatus 100% HIJAU (PASS) dengan 704 assertions** di seluruh modul tim.
 
-| Kelompok Pengujian | Berkas Pengujian | Jumlah Tes | Jumlah Assertions | Status |
-|---|---|:---:|:---:|:---:|
-| **Unit Test** | `tests/Unit/Services/NumberGeneratorTest.php` | 14 | 29 | ✅ **PASS** |
-| **Unit Test** | `tests/Unit/Services/RomanTest.php` | 5 | 18 | ✅ **PASS** |
-| **Feature Test** | `tests/Feature/Services/NumberAllocatorTest.php` | 11 | 25 | ✅ **PASS** |
-| **Feature Test** | `tests/Feature/Api/NumberSuggestTest.php` | 6 | 24 | ✅ **PASS** |
-| **Feature Test** | `tests/Feature/AuthTest.php` | 8 | 44 | ✅ **PASS** |
-| **Feature Test** | `tests/Feature/IssueCertificateTest.php` | 6 | 31 | ✅ **PASS** |
-| **Feature Test** | `tests/Feature/HistoryTest.php` | 6 | 24 | ✅ **PASS** |
-| **Feature Test** | `tests/Feature/ConcurrencyAndEdgeCasesTest.php` | 3 | 45 | ✅ **PASS** |
-| **Default Test** | `tests/Unit/ExampleTest.php` & `Feature/ExampleTest.php` | 2 | 1 | ✅ **PASS** |
-| **TOTAL KESELURUHAN** | **9 Berkas Tes Terpadu** | **61 Tests** | **241 Assertions** | 🚀 **100% PASS** |
+| Kelompok Pengujian | Modul Utama | Jumlah Tes | Status |
+|---|---|:---:|:---:|
+| **Penomoran & Alokator** | `NumberGeneratorTest`, `NumberAllocatorTest`, `RomanTest` | 30 | ✅ **PASS** |
+| **Penerbitan, Riwayat & Konkurensi** | `IssueCertificateTest`, `HistoryTest`, `ConcurrencyAndEdgeCasesTest` | 19 | ✅ **PASS** |
+| **API Form & Autentikasi** | `NumberSuggestTest`, `AuthTest`, `AccessTest` | 19 | ✅ **PASS** |
+| **Admin Kegiatan & Pengguna** | `EventManagementTest`, `UserManagementTest` | 46 | ✅ **PASS** |
+| **Engine PDF & Layout TCPDF** | `CertificateRendererTest`, `LayoutConfigTest`, `TextFitterTest`, dll. | 73 | ✅ **PASS** |
+| **TOTAL KESELURUHAN** | **Seluruh 19 Berkas Tes Terpadu** | **187 Tests (704 Assertions)** | 🚀 **100% PASS** |
 
 ---
 
