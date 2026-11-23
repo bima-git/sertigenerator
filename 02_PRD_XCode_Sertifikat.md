@@ -173,7 +173,7 @@ Kebutuhan produk secara rinci: peran, kebutuhan fungsional, penomoran, PDF, data
 | RW-04 | Detail sertifikat. | Menampilkan data cetak, nomor, pembuat, dan riwayat perubahan status. |
 | RW-05 | Admin membatalkan sertifikat dengan alasan. | Status menjadi Dibatalkan, baris tidak dihapus, nomor tidak dipakai ulang. |
 | RW-06 | Unduh ulang sertifikat yang dibatalkan memberi peringatan jelas. | PDF diberi tanda air DIBATALKAN. |
-| RW-07 | Operator hanya melihat sertifikat yang ia buat. Admin melihat semua. | **[ASUMSI]** Dapat diubah menjadi semua operator melihat semua. |
+| RW-07 | Operator dan Admin melihat semua sertifikat. | Diputuskan 2026-11-23. Pembatalan tetap khusus Admin (RW-05). |
 
 ### 4.7 Pengguna
 
@@ -398,7 +398,7 @@ Skrip `database/seeders/EventSeeder.php` membaca daftar pada dokumen aturan kode
 | 10 | Nomor urut direset per tahun atau per kegiatan | Per kombinasi kegiatan, seri, dan tahun | Ubah query penghitung |
 | 11 | File latar bersih, tanda tangan transparan, dan font asli | Diminta ke coach. Sementara memakai Tinos atau Liberation Serif | Kalibrasi tertunda |
 | 12 | Versi framework, PHP, dan hosting | Laravel 12, PHP 8.2+, MySQL 8 atau MariaDB 10.6+ | Wajib menggunakan Laravel 12; hosting harus mendukung ekstensi dan Composer yang diperlukan |
-| 13 | Operator melihat sertifikat siapa saja | Hanya miliknya | Ubah saringan riwayat |
+| 13 | Operator melihat sertifikat siapa saja | **Diputuskan 2026-11-23:** semua sertifikat (lihat, detail, unduh ulang). Pembatalan tetap khusus Admin | Ubah saringan riwayat |
 
 **Pertanyaan siap kirim ke coach**
 

@@ -151,7 +151,7 @@ Gunakan struktur standar Laravel. Tambahkan kelas dan direktori domain seperluny
 
 ## 2. Peran dan penjaga akses
 
-Gunakan middleware dan authorization Laravel. Untuk akses per sertifikat, implementasikan `CertificatePolicy` atau query scope yang memastikan Operator hanya mengakses miliknya dan Admin dapat mengakses semua. Jangan membuat middleware CSRF, session, atau rate limiter manual.
+Gunakan middleware dan authorization Laravel. Semua pengguna yang login dapat melihat, membuka, dan mengunduh ulang semua sertifikat; hanya Admin yang dapat membatalkan (diputuskan 2026-11-23). Jangan membuat middleware CSRF, session, atau rate limiter manual.
 
 | Middleware | Fungsi | Bila gagal |
 |---|---|---|
@@ -159,7 +159,7 @@ Gunakan middleware dan authorization Laravel. Untuk akses per sertifikat, implem
 | `role:admin` (middleware aplikasi) atau Gate/Policy | Peran Admin | Halaman 403 dengan tautan ke Terbitkan |
 | Middleware CSRF bawaan Laravel | Token CSRF valid pada seluruh form web yang mengubah data | Halaman 419 dengan tombol Muat Ulang |
 | `throttle` | Batas laju: login 10 per menit per IP, penerbitan dan pratinjau 30 per menit per pengguna | Pesan menunggu beserta lamanya |
-| `CertificatePolicy` | Operator hanya membuka sertifikat miliknya; Admin dapat membuka semua | Halaman 404/403 sesuai kebijakan |
+| Akses sertifikat | Semua pengguna yang login membuka semua sertifikat; hanya Admin yang membatalkan | 403 untuk pembatalan oleh Operator |
 
 ---
 

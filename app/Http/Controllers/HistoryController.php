@@ -15,7 +15,7 @@ class HistoryController extends Controller
 {
     /**
      * Daftar riwayat dengan saringan, ringkasan, grafik 6 bulan, dan aktivitas terbaru.
-     * Operator hanya melihat sertifikat buatannya (Design System bagian 2).
+     * Semua peran melihat semua sertifikat; aktivitas terbaru Operator tetap miliknya sendiri.
      *
      * Rute: GET /riwayat (Nama: history.index)
      */
@@ -23,9 +23,8 @@ class HistoryController extends Controller
     {
         $me = auth()->user();
         abort_unless($me, 401);
-        $mine = fn ($q) => $me->isAdmin() ? $q : $q->where('dibuat_oleh', $me->id);
 
-        $certificates = $mine(Certificate::query()->with(['event:id,kode,judul', 'creator:id,nama']))
+        $certificates = Certificate::query()->with(['event:id,kode,judul', 'creator:id,nama'])
             ->when($request->query('q'), fn ($q, $s) => $q->where(fn ($w) => $w->where('nama_peserta', 'like', "%{$s}%")->orWhere('nomor_lengkap', 'like', "%{$s}%")))
             ->when($request->query('jenis'), fn ($q, $v) => $q->whereIn('jenis', (array) $v))
             ->when($request->query('status'), fn ($q, $v) => $q->whereIn('status', (array) $v))
@@ -33,7 +32,7 @@ class HistoryController extends Controller
             ->when($request->query('sampai'), fn ($q, $v) => $q->whereDate('tanggal_terbit', '<=', $v))
             ->latest()->paginate(25)->withQueryString();
 
-        $all = $mine(Certificate::query())->get(['jenis', 'status', 'tanggal_terbit']);
+        $all = Certificate::query()->get(['jenis', 'status', 'tanggal_terbit']);
         $monthly = collect(range(5, 0))->mapWithKeys(function ($ago) use ($all) {
             $m = now()->startOfMonth()->subMonths($ago);
 
@@ -57,7 +56,7 @@ class HistoryController extends Controller
     }
 
     /**
-     * Detail satu sertifikat. Operator hanya boleh membuka miliknya.
+     * Detail satu sertifikat.
      *
      * Rute: GET /riwayat/{id} (Nama: history.show)
      */
@@ -69,12 +68,14 @@ class HistoryController extends Controller
         return view('history.show', ['c' => $c]);
     }
 
-    /** Operator hanya boleh mengakses sertifikat buatannya; Admin semua (Design System bagian 2). */
+    /**
+     * Semua pengguna yang login boleh melihat dan mengunduh ulang semua sertifikat
+     * (keputusan 2026-11-23, menggantikan asumsi PRD no. 13 / AB-20). Pembatalan tetap khusus Admin.
+     */
     private function authorizeOwner(Certificate $c): User
     {
         $me = auth()->user();
         abort_unless($me, 401);
-        abort_if(! $me->isAdmin() && $c->dibuat_oleh !== $me->id, 404);
 
         return $me;
     }

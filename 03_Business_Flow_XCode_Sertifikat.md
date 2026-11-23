@@ -129,7 +129,7 @@ Pratinjau tidak menulis ke riwayat dan tidak menambah hitungan nomor.
 
 | No | Pelaku | Aksi | Respons sistem | Hasil |
 |---|---|---|---|---|
-| 1 | Pengguna | Membuka Riwayat | Menampilkan daftar terbaru (operator: miliknya, admin: semua) | Daftar |
+| 1 | Pengguna | Membuka Riwayat | Menampilkan daftar terbaru dari semua pengguna | Daftar |
 | 2 | Pengguna | Mencari nama atau nomor, menyaring jenis, status, atau tanggal | Menyaring daftar | Hasil saringan |
 | 3 | Pengguna | Membuka detail satu sertifikat | Menampilkan data cetak, nomor, pembuat, status | Detail |
 | 4 | Pengguna | Menekan Unduh Ulang | Merender dari data cetak dan versi layout yang tercatat | PDF identik |
@@ -270,7 +270,7 @@ Sertifikat tidak dihapus dan tidak diubah isinya setelah terbit.
 | AB-17 | Tanggal terbit bawaan adalah hari ini menurut zona waktu Asia/Jakarta. |
 | AB-18 | Kegiatan yang sudah dipakai sertifikat tidak dapat dihapus, hanya dinonaktifkan. |
 | AB-19 | Selalu ada minimal satu Admin aktif. |
-| AB-20 | Operator hanya melihat sertifikat buatannya. Admin melihat semua. **[ASUMSI]** |
+| AB-20 | Operator dan Admin melihat semua sertifikat (daftar, detail, unduh ulang). Hanya Admin yang dapat membatalkan. (Diputuskan 2026-11-23.) |
 | AB-21 | Semua penerbitan, unduh ulang, pembatalan, dan perubahan data master dicatat di audit. |
 | AB-22 | Satu penerbitan menghasilkan tepat satu sertifikat untuk satu peserta. |
 
