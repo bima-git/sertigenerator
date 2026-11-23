@@ -32,12 +32,29 @@ class UserRequest extends FormRequest
         }
 
         if ($this->has('aktif')) {
-            $merge['aktif'] = $this->boolean('aktif');
+            // Form self-edit men-disable checkbox aktif tetapi hidden aktif=0
+            // tetap terkirim. Akun sendiri selalu dipaksa aktif oleh
+            // UserController::update, jadi nilai itu dinormalkan agar edit
+            // profil yang diizinkan tidak ikut gagal validasi (BUG-1).
+            $merge['aktif'] = $this->isEditingSelf() ? true : $this->boolean('aktif');
         }
 
         if (! empty($merge)) {
             $this->merge($merge);
         }
+    }
+
+    /**
+     * Apakah request ini mengubah akun milik pengguna yang sedang login?
+     */
+    private function isEditingSelf(): bool
+    {
+        $userId = $this->route('id');
+        $currentUser = $this->user();
+
+        return $userId !== null
+            && $currentUser !== null
+            && (int) $userId === $currentUser->id;
     }
 
     /**
