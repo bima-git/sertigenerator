@@ -100,7 +100,7 @@ Semua `x`/`y` dalam **milimeter dari sudut kiri atas**, `size` dalam **point**.
 
 `align` hanya menerima `L` dan `C`. Elemen digambar berurutan sesuai urutan array, jadi gambar (logo, tanda tangan) diletakkan lebih dulu agar teks berada di atasnya.
 
-### C. Peta Elemen Seminar (versi 1.2)
+### C. Peta Elemen Seminar (versi 1.3)
 
 | Elemen | Isi | Posisi acuan (mm) |
 |---|---|---|
@@ -108,18 +108,18 @@ Semua `x`/`y` dalam **milimeter dari sudut kiri atas**, `size` dalam **point**.
 | `judul_kegiatan` | `judul_cetak` (auto-shrink) | x 9,21 / y 47,07, 18 pt, max 210 mm, 2 baris |
 | `script_sertifikat` | "Sertifikat" (PinyonScript) | x 33,28 / y 109,14, 135,9 pt |
 | `diberikan_kepada` | teks tetap | x 117,99 / y 122,70, 19,85 pt |
-| `domain` | "xcode.or.id" | x 240,88 / y 71,13, 23 pt |
-| `nomor` | `nomor_lengkap`, rata tengah | pusat x 258,9 / y 77,53, 11 pt |
+| `domain` | domain sesuai penerbit (`xcode.or.id` / `siberexpert.com`) | x 240,88 / y 71,13, 23 pt, max 54 mm |
+| `nomor` | `nomor_lengkap`, rata tengah | pusat x 258,9 / y 77,53, 13 pt |
 | `qr` | QR verifikasi | x 240,3 / y 87,0, 36,5 mm |
 | `url_verifikasi` | alamat teks di bawah QR | pusat x 258,9 / y 128,44, 9 pt |
-| `nama` | `nama_peserta` (auto-shrink) | pusat x 120 / y 151,62, 28 pt, max 148 mm, 2 baris |
-| `garis_nama` | garis bawah nama | x 45,96 / y 157,07, panjang 148,7 mm, tebal 1,12 mm |
-| `tanggal` | `tanggal_kota`, rata tengah | pusat x 258,9 / y 159,61, 14 pt |
-| `tanda_tangan`, `garis_tanda_tangan` | gambar & garis ttd | gambar x 234,12 / y 156,01, 50,55 × 38,38 mm; garis y 185,79 |
-| `penanda_tangan`, `jabatan_penanda_tangan` | nama & jabatan | pusat x 258,9 / y 193,14 (15 pt bold) dan 198,75 (13 pt) |
-| `logo` | pita logo kanan atas | x 210 / y 0, 75 × 62,5 mm |
+| `nama` | `nama_peserta` (auto-shrink) | pusat x 120 / y 151,62, 35 pt, max 148 mm, 2 baris, line_h 10 |
+| `garis_nama` | garis bawah nama | x 45,96 / y 157,07, panjang 148,7 mm, tebal 0,42 mm |
+| `tanggal` | `tanggal_kota`, rata tengah | pusat x 258,9 / y 159,61, 16 pt |
+| `tanda_tangan`, `garis_tanda_tangan` | gambar & garis ttd | gambar x 234,12 / y 156,01, 50,55 × 38,38 mm; garis y 189,2 |
+| `penanda_tangan`, `jabatan_penanda_tangan` | nama & jabatan | pusat x 258,9 / y 194,8 (15 pt bold) dan 200,0 (13 pt) |
+| `logo` | pita sesuai penerbit | x 210 / y 0, 75 × 62,5 mm; `brand: logo` |
 
-### D. Peta Elemen Bootcamp (versi 1.4)
+### D. Peta Elemen Bootcamp (versi 1.5)
 
 Struktur sama dengan seminar, perbedaannya:
 
@@ -128,10 +128,10 @@ Struktur sama dengan seminar, perbedaannya:
 | `judul_besar` | "SERTIFIKAT PENCAPAIAN" | x 9,21 / y 36,30, 41 pt |
 | `subjudul_1` | templat `Ujian {ujian}` | x 9,21 / y 47,98, 22 pt, max 210 mm |
 | `subjudul_2` | `{bootcamp}` | x 9,21 / y 55,92, 22 pt, max 212 mm |
-| `nama` | `nama_peserta` | pusat x 120 / y 145,48, 28 pt, max 148 mm, 2 baris |
-| `garis_nama` | garis bawah nama | x 45,96 / y 150,93, panjang 148,7 mm, tebal 1,12 mm |
+| `nama` | `nama_peserta` | pusat x 120 / y 145,48, 35 pt, max 148 mm, 2 baris, line_h 10 |
+| `garis_nama` | garis bawah nama | x 45,96 / y 150,93, panjang 148,7 mm, tebal 0,42 mm |
 | `paragraf` | templat `Peserta dinyatakan telah lulus {ujian} pada {bootcamp}.` | pusat x 120,4 / y 165,46, 15 pt, max 137 mm, 2 baris, `balance: false` |
-| `penanda_tangan` | "Cantika" | pusat x 258,9 / y 193,14, **serif bold** sejak versi 1.4 (sampel asli memakai Times bold) |
+| `penanda_tangan` | "Cantika" | pusat x 258,9 / y 194,8, **serif bold**; garis ttd y 189,2 |
 
 Bootcamp **tidak** mencetak nomor, URL verifikasi, dan QR — sama dengan sampel asli `Taufik Hidayat.pdf` dan aturan PRD PD-08.
 
@@ -156,8 +156,8 @@ Bootcamp **tidak** mencetak nomor, URL verifikasi, dan QR — sama dengan sampel
 
 | Jenis | Versi aktif | Arsip tersedia |
 |---|---|---|
-| `seminar` | 1.2 | 1.2 |
-| `bootcamp` | 1.4 | 1.3 |
+| `seminar` | 1.3 | 1.2 |
+| `bootcamp` | 1.5 | 1.3, 1.4 |
 
 ---
 
@@ -206,8 +206,8 @@ Ubah angka pada elemen terkait saja. Konversi: **1 pt = 0,352778 mm**. Contoh: t
 ### Langkah 5 — Naikkan versi & arsipkan
 
 ```bash
-cp config/layout/seminar.php config/layout/arsip/seminar-1.2.php   # simpan versi lama
-# ubah 'versi' => '1.3' di config/layout/seminar.php, lalu edit koordinat
+cp config/layout/seminar.php config/layout/arsip/seminar-1.3.php   # simpan versi lama
+# ubah 'versi' => '1.4' di config/layout/seminar.php, lalu edit koordinat
 ```
 
 ### Langkah 6 — Verifikasi ulang
@@ -236,7 +236,16 @@ Seminar (`Ridla Dratistiwa.pdf`, `Syafrizal Devan Pradana.pdf`) sudah tepat, sel
 
 Garis bawah nama (x 130,22–551,62 pt, tebal 3,18 pt) dan garis tanda tangan (y 526,69 pt, tebal 1,50 pt) juga identik. Bootcamp sama presisi; satu-satunya perbaikan yang lahir dari pengukuran adalah `penanda_tangan` bootcamp yang tadinya `poppins` dan kini `serif_bold` (versi 1.4).
 
-Sisa perbedaan yang **bukan** cacat layout: contoh Ridla memakai subjudul 16 pt sedangkan contoh Syafrizal 18 pt (Canva menyesuaikan per sertifikat), dan logo mengikuti penerbit kegiatan (`siberexpert.com` vs `xcode.or.id`).
+Sisa perbedaan yang **bukan** cacat layout: contoh Ridla memakai subjudul 16 pt sedangkan contoh Syafrizal 18 pt (Canva menyesuaikan per sertifikat). Logo sekarang mengikuti penerbit kegiatan: pita abu-abu + `siberexpert.com` untuk SiberExpert, pita merah + `xcode.or.id` untuk X-Code.
+
+### Penyesuaian Tampilan 23 November 2026 (versi 1.3 / 1.5)
+
+- Padding putih opaque di kiri `logo.png` dibuat transparan (`logo-xcode.png`), sehingga ornamen abu-abu latar menyambung ke pita tanpa celah.
+- Nama peserta 28 → 35 pt (auto-shrink tetap), garis bawah nama 1,12 → 0,42 mm.
+- Garis tanda tangan 185,79 → 189,2 mm agar tidak memotong ekor tanda tangan; nama dan jabatan ikut turun 1,66 mm.
+- Nomor 11 → 13 pt, tanggal 14 → 16 pt; domain menjadi elemen `fit` agar `siberexpert.com` tetap dalam halaman.
+- Tanda air tile "XCODE" 30°, alpha 0,06, dirender di atas latar dan di bawah seluruh konten.
+- Pita SiberExpert dibuat dari logo pada raster contoh Ridla (`storage/app/kalibrasi/asli-seminar.png`), karena aset vektor/PNG resminya belum tersedia.
 
 ### Checklist Sebelum Commit Perubahan Layout
 
@@ -291,6 +300,8 @@ Pengaturan di `config/certificate.php`:
 - `text_color` — warna teks utama `[17,17,17]`.
 - `qr.url` — satu alamat untuk semua sertifikat: `https://xcode.co.id/cekkodesertifikat`.
 - Tampil atau tidaknya QR diatur lewat data event `pakai_qr` (`CertificateDataMapper`), bukan dengan mengubah alamat; pemanggil juga boleh mengirim `pakai_qr => false` untuk melewati elemen QR tanpa menyunting layout.
+- `branding.default` / `branding.siberexpert` — path pita dan domain. Renderer memilih berdasarkan `penerbit` kegiatan; sertifikat lama tanpa penerbit dikenali dari segmen keempat nomor (`.../SiberExpert/...`). Hanya elemen layout bertanda `brand` yang ditimpa, sehingga arsip tetap memakai logo/domain lamanya.
+- `brand_watermark` — teks tile "XCODE", warna, alpha 0,06, ukuran 30 pt, sudut 30°, jarak 58 × 40 mm. Berlaku di semua mode.
 - `watermark.pratinjau` / `watermark.dibatalkan` — teks bawaan, warna, alpha, ukuran (90 pt), sudut (45°). Nilai `text` boleh diganti kalimat apa pun.
 - Teks bebas dari form dikirim lewat parameter render dan menimpa `text`: `PdfRenderer::render($certificate, 'pratinjau', 'SALINAN ARSIP')`. Gaya mengikuti blok mode yang dipakai; mode `terbit` tanpa teks bebas tidak diberi tanda air, sedangkan `terbit` dengan teks bebas memakai gaya netral `pratinjau`. Teks kosong/spasi dianggap tidak diisi, sehingga default mode tetap berlaku.
 
@@ -312,7 +323,7 @@ Metadata PDF: `SetTitle('Sertifikat {jenis} - {nama peserta} ({mode})')` memenuh
 
 | Berkas | Cakupan |
 |---|---|
-| `tests/Feature/CertificateRendererTest.php` | Teks & elemen seminar/bootcamp, QR, garis bantu, mode watermark, teks watermark bebas, layout arsip, file output, metadata judul, nama 70 karakter & judul panjang tetap satu halaman |
+| `tests/Feature/CertificateRendererTest.php` | Teks & elemen seminar/bootcamp, QR, garis bantu, mode watermark, teks watermark bebas, layout arsip, file output, metadata judul, nama 70 karakter & judul panjang tetap satu halaman, branding XCODE/SiberExpert, branding dari nomor lama, watermark tile |
 | `tests/Feature/PdfRendererTest.php` | Kontrak `PdfRenderer::render()` meneruskan teks watermark dari form dan memakai default mode saat `null` |
 | `tests/Unit/Services/LayoutConfigTest.php` | Validasi layout, pemilihan versi arsip, fallback, font penanda tangan, versi arsip |
 | `tests/Unit/Pdf/CertificateDataMapperTest.php` | Pemetaan Certificate → data layout |

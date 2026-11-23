@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 /*
  * Layout sertifikat seminar/webinar.
+ * Versi 1.3: pita mengikuti penerbit (XCODE/SiberExpert), nama lebih besar,
+ * garis nama lebih tipis, tanda tangan dinaikkan, nomor/tanggal diperbesar.
  * Versi 1.2: pita logo, garis bawah nama, dan garis tanda tangan diambil dari
  * sampel asli "Syafrizal Devan Pradana.pdf". Versi 1.1: koordinat diukur dari
  * sampel itu (halaman 297,13 x 210,08 mm).
@@ -12,7 +14,7 @@ declare(strict_types=1);
  * Setiap perubahan koordinat wajib menaikkan "versi" dan mengarsipkan berkas lama.
  */
 return [
-    'versi' => '1.2',
+    'versi' => '1.3',
     'background' => 'assets/templates/background.png',
     'font' => [
         'serif' => 'tinos',
@@ -35,10 +37,12 @@ return [
             'h' => 38.38,
             'optional' => true,
         ],
-        // Pita logo sudah termasuk bidang kosong di kiri pita (transparan).
+        // Pita mengikuti penerbit; padding putih di kiri pita dibuat transparan
+        // agar ornamen abu-abu latar menyambung tanpa celah.
         'logo' => [
             'type' => 'image',
-            'path' => 'assets/templates/logo.png',
+            'brand' => 'logo',
+            'path' => 'assets/templates/logo-xcode.png',
             'x' => 210,
             'y' => 0,
             'w' => 75,
@@ -50,12 +54,12 @@ return [
             'x' => 45.96,
             'y' => 157.07,
             'w' => 148.7,
-            'tebal' => 1.12,
+            'tebal' => 0.42,
         ],
         'garis_tanda_tangan' => [
             'type' => 'line',
             'x' => 230.25,
-            'y' => 185.79,
+            'y' => 189.2,
             'w' => 57.11,
             'tebal' => 0.53,
         ],
@@ -80,12 +84,15 @@ return [
             'line_h' => 7.5,
         ],
         'domain' => [
-            'type' => 'text',
+            'type' => 'fit',
+            'brand' => 'domain',
             'text' => 'xcode.or.id',
             'x' => 240.88,
             'y' => 71.13,
             'align' => 'L',
             'size' => 23,
+            'min_size' => 14,
+            'max_w' => 54,
         ],
         'nomor' => [
             'type' => 'fit',
@@ -93,8 +100,8 @@ return [
             'x' => 258.9,
             'y' => 77.53,
             'align' => 'C',
-            'size' => 11,
-            'min_size' => 8,
+            'size' => 13,
+            'min_size' => 9,
             'max_w' => 58,
         ],
         'script_sertifikat' => [
@@ -137,11 +144,11 @@ return [
             'x' => 120,
             'y' => 151.62,
             'align' => 'C',
-            'size' => 28,
-            'min_size' => 16,
+            'size' => 35,
+            'min_size' => 20,
             'max_w' => 148,
             'max_lines' => 2,
-            'line_h' => 8,
+            'line_h' => 10,
         ],
         'tanggal' => [
             'type' => 'text',
@@ -149,14 +156,14 @@ return [
             'x' => 258.9,
             'y' => 159.61,
             'align' => 'C',
-            'size' => 14,
+            'size' => 16,
         ],
         // Ganti nama dan jabatan di sini bila penanggung jawab berganti.
         'penanda_tangan' => [
             'type' => 'text',
             'text' => 'Cynthia',
             'x' => 258.9,
-            'y' => 193.14,
+            'y' => 194.8,
             'align' => 'C',
             'font' => 'serif_bold',
             'size' => 15,
@@ -165,7 +172,7 @@ return [
             'type' => 'text',
             'text' => 'Direktur',
             'x' => 258.9,
-            'y' => 198.75,
+            'y' => 200.0,
             'align' => 'C',
             'size' => 13,
         ],
