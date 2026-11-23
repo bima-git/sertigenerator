@@ -339,6 +339,31 @@
     dialog.modal::backdrop { background: rgb(20 20 22 / 0.45); backdrop-filter: blur(4px); }
     dialog.modal[open] { animation: modal-in 0.35s var(--ease-out); }
     dialog.modal[open]::backdrop { animation: fade-in 0.25s ease-out; }
+    .modal-icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; flex: none; border-radius: 999px; font-size: 1.25rem; background: var(--t-soft); color: var(--t); }
+
+    /* ---------- Toast (pop-up notifikasi) ---------- */
+    .toast-success { --t: var(--success); --t-soft: var(--success-soft); }
+    .toast-danger { --t: var(--danger); --t-soft: var(--danger-soft); }
+    .toast-warning { --t: var(--warning); --t-soft: var(--warning-soft); }
+    .toast-info, .tone-brand { --t: var(--brand); --t-soft: var(--brand-soft); }
+    .tone-danger { --t: var(--danger); --t-soft: var(--danger-soft); }
+    .toast {
+        pointer-events: auto; position: relative; overflow: hidden;
+        display: flex; align-items: flex-start; gap: 0.875rem; padding: 0.95rem 0.875rem 1.1rem 1rem;
+        border-radius: 18px; border: 1px solid var(--line); background: var(--surface-raised); box-shadow: var(--shadow-pop);
+        animation: toast-in 0.45s var(--ease-out);
+    }
+    .toast .modal-icon { width: 2.25rem; height: 2.25rem; font-size: 1.125rem; }
+    .toast-title { font-weight: 600; font-size: 0.9375rem; color: var(--fg); }
+    .toast-msg { margin-top: 2px; font-size: 0.875rem; line-height: 1.5; color: var(--fg-body); overflow-wrap: anywhere; }
+    .toast-bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--t); transform-origin: left; animation: toast-time var(--dur, 6s) linear forwards; }
+    .toast:hover .toast-bar { animation-play-state: paused; }
+    .toast.is-leaving { animation: toast-out 0.28s ease-in forwards; }
+    @keyframes toast-time { to { transform: scaleX(0); } }
+    @keyframes toast-out { to { opacity: 0; transform: translateX(28px) scale(0.98); } }
+
+    /* Hasil pencarian yang sedang dimuat ulang tanpa pindah halaman. */
+    [data-live-region][aria-busy='true'] { opacity: 0.55; transition: opacity 0.2s; pointer-events: none; }
 
     /* ---------- Kerangka memuat ---------- */
     .skeleton { border-radius: 8px; background: linear-gradient(90deg, var(--surface-sunken) 25%, var(--surface-alt) 50%, var(--surface-sunken) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }

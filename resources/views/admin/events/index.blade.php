@@ -8,7 +8,7 @@
     </x-slot:actions>
 </x-page-header>
 
-<form method="GET" class="flex flex-col gap-3 sm:flex-row mb-4" data-reveal role="search">
+<form method="GET" data-live class="flex flex-col gap-3 sm:flex-row mb-4" data-reveal role="search">
     <div class="relative flex-1">
         <label for="q" class="sr-only">Cari kode atau judul</label>
         <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"></i>
@@ -22,7 +22,7 @@
     </select>
 </form>
 
-<section class="card overflow-hidden" data-reveal style="--i:1">
+<section class="card overflow-hidden" data-reveal style="--i:1" data-live-region="list">
     @if (count($events) === 0)
         <x-empty-state icon="ph-calendar-plus" title="Belum ada kegiatan. Tambahkan kegiatan pertama agar operator bisa menerbitkan." action="Tambah Kegiatan" :href="route('admin.events.create')" />
     @else
@@ -43,7 +43,7 @@
                         <td data-label="">
                             <div class="flex justify-end gap-1">
                                 <a href="{{ route('admin.events.edit', $e['id']) }}" class="btn btn-ghost btn-sm"><i class="ph ph-pencil-simple"></i>Ubah</a>
-                                <form method="POST" action="{{ url('/admin/kegiatan/'.$e['id'].'/aktif') }}" @if ($e['aktif']) data-confirm="Nonaktifkan kegiatan {{ $e['kode'] }}? Kegiatan tidak muncul lagi di form Terbitkan." @endif>
+                                <form method="POST" action="{{ url('/admin/kegiatan/'.$e['id'].'/aktif') }}" @if ($e['aktif']) data-confirm-title="Nonaktifkan kegiatan {{ $e['kode'] }}?" data-confirm="Kegiatan tidak muncul lagi di form Terbitkan. Sertifikat yang sudah terbit tidak berubah." @endif>
                                     @csrf
                                     <button class="btn btn-sm {{ $e['aktif'] ? 'btn-danger' : 'btn-secondary' }}">{{ $e['aktif'] ? 'Nonaktifkan' : 'Aktifkan' }}</button>
                                 </form>
