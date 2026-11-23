@@ -6,7 +6,7 @@
  * Bila endpoint belum tersedia, nomor dihitung lokal hanya untuk pratinjau.
  * Server tetap memvalidasi ulang semuanya.
  */
-import { setLoading, toast } from './app';
+import { confirmDialog, setLoading, toast } from './app';
 
 const ROMAN =['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 const pad3 = (n) => String(n).padStart(3, '0');
@@ -197,9 +197,14 @@ export function initIssueForm() {
     ui.restoreJudul.addEventListener('click', () => { f.judul.value = event?.judul ?? ''; render(); });
     f.program.addEventListener('input', () => delete f.program.dataset.auto);
 
-    $('#btn-reset').addEventListener('click', () => {
+    $('#btn-reset').addEventListener('click', async () => {
         const fields = [f.nama, f.judul, f.urut, f.program, f.perusahaan, f.mulai, f.selesai];
-        if (fields.some((el) => el.value) && !window.confirm('Kosongkan semua isian? Jenis dan kegiatan tetap terpilih.')) return;
+        if (fields.some((el) => el.value) && !(await confirmDialog({
+            title: 'Kosongkan form?',
+            message: 'Semua isian dihapus. Jenis dan kegiatan tetap terpilih.',
+            confirm: 'Kosongkan',
+            icon: 'ph-eraser',
+        }))) return;
         fields.forEach((el) => (el.value = ''));
         if (event && jenis === 'seminar') f.judul.value = event.judul;
         if (event && jenis === 'bootcamp') f.program.value = event.program_default ?? '';
