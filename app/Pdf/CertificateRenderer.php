@@ -49,6 +49,9 @@ final class CertificateRenderer
             $this->drawBackground($pdf, $backgroundPath ?? $layout['background']);
         }
 
+        // Tanda air tile berada di belakang konten tetapi tetap di atas latar.
+        $this->drawBrandWatermark($pdf);
+
         if ($withGuides) {
             $this->drawGuides($pdf, $layout);
             $pdf->SetTextColor($red, $green, $blue);
@@ -427,6 +430,63 @@ final class CertificateRenderer
     private function qrContent(): string
     {
         return (string) config('certificate.qr.url');
+    }
+
+    /**
+     * Menyebar teks "XCODE" miring sebagai tanda air tile di seluruh halaman.
+     */
+    private function drawBrandWatermark(TCPDF $pdf): void
+    {
+        /** @var array{text?: string, color?: array{0: int, 1: int, 2: int}, alpha?: float, size?: float, angle?: float, gap_x?: float, gap_y?: float}|null $pengaturan */
+        $pengaturan = config('certificate.brand_watermark');
+
+        if (! is_array($pengaturan)) {
+            return;
+        }
+
+        $teks = trim((string) ($pengaturan['text'] ?? ''));
+        $ukuran = (float) ($pengaturan['size'] ?? 30);
+        $jarakX = (float) ($pengaturan['gap_x'] ?? 58);
+        $jarakY = (float) ($pengaturan['gap_y'] ?? 40);
+
+        if ($teks === '' || $ukuran <= 0 || $jarakX <= 0 || $jarakY <= 0) {
+            return;
+        }
+
+        $warna = $pengaturan['color'] ?? [120, 120, 120];
+        $alpha = (float) ($pengaturan['alpha'] ?? 0.06);
+        $sudut = (float) ($pengaturan['angle'] ?? 30);
+        $family = 'helvetica';
+        $style = 'B';
+
+        $tengahX = $pdf->getPageWidth() / 2;
+        $tengahY = $pdf->getPageHeight() / 2;
+        // Jari-jari halaman setelah diputar, agar tidak ada sudut yang kosong.
+        $jari = sqrt($pdf->getPageWidth() ** 2 + $pdf->getPageHeight() ** 2) / 2 + $jarakX;
+
+        $pdf->setAlpha($alpha, 'Normal', $alpha);
+        $pdf->SetTextColor(...$warna);
+        $pdf->SetFont($family, $style, $ukuran);
+
+        $lebar = (float) $pdf->GetStringWidth($teks, $family, $style, $ukuran);
+
+        $pdf->StartTransform();
+        $pdf->Rotate($sudut, $tengahX, $tengahY);
+
+        $baris = 0;
+
+        for ($y = $tengahY - $jari; $y <= $tengahY + $jari; $y += $jarakY) {
+            $geser = $baris % 2 === 0 ? 0.0 : $jarakX / 2;
+
+            for ($x = $tengahX - $jari - $geser; $x <= $tengahX + $jari; $x += $jarakX) {
+                $pdf->Text($x - $lebar / 2, $y, $teks, calign: 'T', valign: 'T');
+            }
+
+            $baris++;
+        }
+
+        $pdf->StopTransform();
+        $pdf->setAlpha(1);
     }
 
     private function drawWatermark(TCPDF $pdf, CertificateMode $mode, ?string $teksBebas): void

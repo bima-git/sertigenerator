@@ -24,7 +24,9 @@
             <span class="count num" style="--to: {{ $stats['bulan_ini'] }}" aria-hidden="true"></span><span class="sr-only">{{ $stats['bulan_ini'] }}</span>
             sertifikat terbit bulan ini
         </h1>
-        <p class="mt-2 text-white/75 max-w-[46ch]">Semua sertifikat tersimpan di sini. Unduh ulang menghasilkan PDF yang sama dengan unduhan pertama.</p>
+        <p class="mt-2 text-white/75 max-w-[46ch]">
+            Sertifikat dari semua pengguna tersimpan di sini. Unduh ulang menghasilkan PDF yang sama dengan unduhan pertama.
+        </p>
         <a href="{{ route('issue.form') }}" class="btn mt-6 bg-white text-fg hover:bg-zinc-100 shadow-lg"><i class="ph ph-plus"></i>Terbitkan</a>
     </div>
     <div class="ribbon hidden md:grid logo-host" aria-hidden="true">
@@ -48,7 +50,10 @@
             <h2 id="chart-title" class="text-lg font-semibold">Penerbitan per bulan</h2>
             <span class="badge badge-neutral">6 bulan terakhir</span>
         </div>
-        <div class="mt-8 flex min-h-52 flex-1 items-end gap-3 sm:gap-6" role="list">
+        <div class="relative mt-8 flex min-h-52 flex-1 items-end gap-3 sm:gap-6" role="list">
+            @if (array_sum($monthly) === 0)
+                <p class="absolute inset-x-0 top-1/3 text-center text-sm text-muted">Belum ada penerbitan dalam 6 bulan terakhir.</p>
+            @endif
             @foreach ($monthly as $bulan => $jumlah)
                 <div class="bar-col flex h-full flex-1 flex-col items-center gap-2" role="listitem" tabindex="0" aria-label="{{ $bulan }}: {{ $jumlah }} sertifikat">
                     <div class="relative flex w-full max-w-11 flex-1 items-end">
@@ -87,7 +92,7 @@
 </div>
 
 {{-- Saringan --}}
-<form method="GET" class="card mt-5 p-4 sm:p-5 grid gap-4" data-reveal style="--i:7" role="search">
+<form method="GET" data-live class="card mt-5 p-4 sm:p-5 grid gap-4" data-reveal style="--i:7" role="search">
     <div class="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
         <div class="relative">
             <label for="q" class="sr-only">Cari nama atau nomor</label>
@@ -110,14 +115,16 @@
             @endforeach
             @if ($loop->first) <span class="w-px flex-none bg-line mx-1" aria-hidden="true"></span> @endif
         @endforeach
-        @if ($filtered)
-            <a href="{{ route('history.index') }}" class="btn btn-ghost btn-sm ml-auto"><i class="ph ph-x"></i>Hapus Saringan</a>
-        @endif
+        <span class="ml-auto flex-none" data-live-region="clear">
+            @if ($filtered)
+                <a href="{{ route('history.index') }}" class="btn btn-ghost btn-sm" data-live-reset><i class="ph ph-x"></i>Hapus Saringan</a>
+            @endif
+        </span>
     </div>
 </form>
 
 {{-- Daftar --}}
-<section class="card mt-5 overflow-hidden" data-reveal style="--i:8" aria-label="Daftar sertifikat">
+<section class="card mt-5 overflow-hidden" data-reveal style="--i:8" aria-label="Daftar sertifikat" data-live-region="list">
     @if ($certificates->isEmpty())
         @if ($filtered)
             <x-empty-state icon="ph-magnifying-glass" title="Tidak ada sertifikat yang cocok dengan saringan ini." />

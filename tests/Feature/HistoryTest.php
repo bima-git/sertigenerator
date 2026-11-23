@@ -66,6 +66,21 @@ class HistoryTest extends TestCase
     }
 
     /**
+     * Operator lain bisa melihat, membuka, dan mengunduh ulang sertifikat siapa pun,
+     * tetapi tetap tidak bisa membatalkannya.
+     */
+    public function test_operator_lain_melihat_semua_sertifikat_tapi_tidak_bisa_membatalkan(): void
+    {
+        $lain = User::factory()->operator()->create();
+        $this->actingAs($lain);
+
+        $this->get(route('history.index'))->assertOk()->assertSee("Mu&#039;ammal Hamidy", false);
+        $this->get(route('history.show', ['id' => $this->certificate->id]))->assertOk();
+        $this->get(route('history.pdf', ['id' => $this->certificate->id]))->assertOk();
+        $this->postJson(route('history.cancel', ['id' => $this->certificate->id]), ['alasan' => 'Coba batalkan'])->assertForbidden();
+    }
+
+    /**
      * Memastikan unduh ulang sertifikat yang sah menghasilkan berkas PDF identik,
      * header sesuai, dan audit log unduh ulang tercatat.
      */

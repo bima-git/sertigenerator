@@ -100,12 +100,9 @@
                 </div>
             </div>
 
-            @if (session('success'))
-                <div class="alert alert-success mb-6" role="status" data-flash="success"><i class="ph-fill ph-check-circle"></i><span>{{ session('success') }}</span></div>
-            @endif
-            @if (session('error'))
-                <div class="alert alert-danger mb-6" role="alert" data-flash="danger"><i class="ph-fill ph-warning-octagon"></i><span>{{ session('error') }}</span></div>
-            @endif
+            {{-- Pesan server ditampilkan app.js sebagai pop-up toast. --}}
+            @if (session('success')) <p hidden data-flash="success">{{ session('success') }}</p> @endif
+            @if (session('error')) <p hidden data-flash="danger">{{ session('error') }}</p> @endif
             @yield('content')
         </div>
     </main>

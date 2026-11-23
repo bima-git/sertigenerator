@@ -264,7 +264,8 @@ class UserManagementTest extends TestCase
         $admin = $this->createAdmin(['nama' => 'Admin Sedang Login']);
         $this->actingAs($admin);
 
-        // Mencoba memanipulasi request dengan mengirimkan aktif = 0 untuk akun sendiri
+        // Browser tetap mengirim hidden aktif=0 walau checkbox dinonaktifkan.
+        // Penonaktifan diri ditolak, tetapi edit profil yang diizinkan tetap tersimpan.
         $response = $this->post("/admin/pengguna/{$admin->id}/ubah", [
             'nama' => 'Admin Sedang Login',
             'username' => $admin->username,
@@ -272,7 +273,9 @@ class UserManagementTest extends TestCase
             'aktif' => '0',
         ]);
 
-        $response->assertSessionHasErrors('aktif');
+        $response->assertRedirect('/admin/pengguna');
+        $response->assertSessionHas('success');
+        $response->assertSessionHasNoErrors();
 
         $admin->refresh();
         $this->assertTrue($admin->aktif);
@@ -304,7 +307,8 @@ class UserManagementTest extends TestCase
         User::factory()->create(['peran' => 'admin', 'aktif' => false]);
         $this->actingAs($lastAdmin);
 
-        // Mencoba menonaktifkan admin aktif terakhir
+        // Mencoba menonaktifkan admin aktif terakhir (targetnya akun sendiri,
+        // karena hanya admin aktif yang bisa login dan mengirim request).
         $response = $this->post("/admin/pengguna/{$lastAdmin->id}/ubah", [
             'nama' => $lastAdmin->nama,
             'username' => $lastAdmin->username,
@@ -312,7 +316,9 @@ class UserManagementTest extends TestCase
             'aktif' => '0',
         ]);
 
-        $response->assertSessionHasErrors('aktif');
+        $response->assertRedirect('/admin/pengguna');
+        $response->assertSessionHas('success');
+        $response->assertSessionHasNoErrors();
 
         $lastAdmin->refresh();
         $this->assertTrue($lastAdmin->aktif);
@@ -343,7 +349,8 @@ class UserManagementTest extends TestCase
         $admin = $this->createAdmin(['nama' => 'Admin Form Default']);
         $this->actingAs($admin);
 
-        // Form Blade saat mengedit diri sendiri men-disable input peran dan aktif sehingga tidak terkirim di POST
+        // Klien boleh tidak mengirim peran/aktif; controller tetap memaksa
+        // akun sendiri berperan admin dan aktif.
         $response = $this->post("/admin/pengguna/{$admin->id}/ubah", [
             'nama' => 'Admin Nama Baru',
             'username' => $admin->username,
@@ -356,5 +363,58 @@ class UserManagementTest extends TestCase
         $this->assertEquals('Admin Nama Baru', $admin->nama);
         $this->assertEquals('admin', $admin->peran);
         $this->assertTrue($admin->aktif);
+    }
+
+    public function test_self_edit_mengirim_hidden_aktif_nol_tetap_menyimpan_profil(): void
+    {
+        $admin = $this->createAdmin([
+            'nama' => 'Admin Form Default',
+            'username' => 'admin_form',
+        ]);
+        $this->actingAs($admin);
+
+        // Payload persis seperti browser: select peran disabled (tidak terkirim),
+        // checkbox aktif disabled tetapi hidden aktif=0 tetap terkirim.
+        $response = $this->post("/admin/pengguna/{$admin->id}/ubah", [
+            'nama' => 'Admin Nama Baru',
+            'username' => 'admin_form_baru',
+            'aktif' => '0',
+        ]);
+
+        $response->assertRedirect('/admin/pengguna');
+        $response->assertSessionHas('success');
+        $response->assertSessionHasNoErrors();
+
+        $admin->refresh();
+        $this->assertEquals('Admin Nama Baru', $admin->nama);
+        $this->assertEquals('admin_form_baru', $admin->username);
+        $this->assertEquals('admin', $admin->peran);
+        $this->assertTrue($admin->aktif);
+    }
+
+    public function test_admin_lain_tetap_dapat_dinonaktifkan_saat_ada_admin_aktif_lain(): void
+    {
+        $admin = $this->createAdmin(['username' => 'admin_utama']);
+        $this->actingAs($admin);
+
+        $other = $this->createAdmin([
+            'nama' => 'Admin Kedua',
+            'username' => 'admin_kedua',
+        ]);
+
+        $response = $this->post("/admin/pengguna/{$other->id}/ubah", [
+            'nama' => $other->nama,
+            'username' => $other->username,
+            'peran' => 'admin',
+            'aktif' => '0',
+        ]);
+
+        $response->assertRedirect('/admin/pengguna');
+        $response->assertSessionHas('success');
+        $response->assertSessionHasNoErrors();
+
+        $other->refresh();
+        $this->assertFalse($other->aktif);
+        $this->assertTrue($admin->fresh()->aktif);
     }
 }

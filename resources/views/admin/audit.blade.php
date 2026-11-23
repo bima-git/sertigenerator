@@ -12,7 +12,7 @@
 @endphp
 <x-page-header title="Audit" subtitle="Catatan peristiwa penting: masuk, penerbitan, unduh ulang, pembatalan, dan perubahan data." />
 
-<form method="GET" class="flex gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 mb-4" data-reveal style="--i:1">
+<form method="GET" data-live class="flex gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 mb-4" data-reveal style="--i:1">
     @foreach ($aksi as $key => [$lbl])
         <span class="relative">
             <input type="checkbox" class="chip-input" id="a-{{ $key }}" name="aksi[]" value="{{ $key }}" @checked(in_array($key, (array) request('aksi', []))) onchange="this.form.requestSubmit()">
@@ -21,7 +21,7 @@
     @endforeach
 </form>
 
-<section class="card p-2 sm:p-3" data-reveal style="--i:2">
+<section class="card p-2 sm:p-3" data-reveal style="--i:2" data-live-region="list">
     @forelse ($logs as $log)
         @php([$lbl, $icon, $badge] = $aksi[$log->aksi] ?? [$log->aksi, 'ph-dot', 'badge-neutral'])
         @php($detail = $log->detail ?? [])

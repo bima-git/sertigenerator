@@ -69,6 +69,14 @@ final class CertificateRendererTest extends TestCase
         $this->assertStringContainsString('Direktur', $teks);
     }
 
+    public function test_brand_watermark_is_tiled_behind_content(): void
+    {
+        $teks = $this->textOf($this->renderer->render('seminar', $this->seminarData(), withBackground: false));
+
+        // Tile "XCODE" muncul berulang, bukan satu kali di tengah halaman.
+        $this->assertGreaterThanOrEqual(2, substr_count($teks, 'XCODE'));
+    }
+
     public function test_draws_qr_by_default(): void
     {
         $pdf = $this->renderer->render('seminar', $this->seminarData(), withBackground: false);

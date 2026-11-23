@@ -207,7 +207,7 @@ final class LayoutConfigTest extends TestCase
 
         $config = new LayoutConfig(['seminar' => $layout]);
 
-        $this->assertSame('1.2', $config->get('seminar')['versi']);
+        $this->assertSame('1.3', $config->get('seminar')['versi']);
         $this->assertArrayHasKey('script_sertifikat', $config->get('seminar')['elements']);
         $this->assertArrayHasKey('penanda_tangan', $config->get('seminar')['elements']);
     }
@@ -292,7 +292,7 @@ final class LayoutConfigTest extends TestCase
 
     public function test_shipped_archives_match_their_active_versions(): void
     {
-        foreach (['seminar' => '1.2', 'bootcamp' => '1.3'] as $jenis => $versi) {
+        foreach ([['seminar', '1.2'], ['bootcamp', '1.3'], ['bootcamp', '1.4']] as [$jenis, $versi]) {
             $arsip = $this->shipped('arsip/'.$jenis.'-'.$versi);
 
             $this->assertSame($versi, $arsip['versi']);
@@ -321,7 +321,7 @@ final class LayoutConfigTest extends TestCase
 
         $config = new LayoutConfig(['bootcamp' => $layout]);
 
-        $this->assertSame('1.4', $config->get('bootcamp')['versi']);
+        $this->assertSame('1.5', $config->get('bootcamp')['versi']);
     }
 
     public function test_bootcamp_has_no_number_or_qr_element(): void
