@@ -33,7 +33,7 @@
                     <td data-label="">
                         <div class="flex justify-end gap-1">
                             <a href="{{ route('admin.users.edit', $u['id']) }}" class="btn btn-ghost btn-sm"><i class="ph ph-pencil-simple"></i>Ubah</a>
-                            <form method="POST" action="{{ url('/admin/pengguna/'.$u['id'].'/reset-sandi') }}" data-confirm="Buat kata sandi sementara untuk {{ $u['nama'] }}?">
+                            <form method="POST" action="{{ url('/admin/pengguna/'.$u['id'].'/reset-sandi') }}" data-confirm-title="Reset kata sandi {{ $u['nama'] }}?" data-confirm="Kata sandi lama tidak berlaku lagi. Kata sandi sementara tampil sekali setelah ini, sampaikan ke pengguna." data-confirm-tone="brand">
                                 @csrf
                                 <button class="btn btn-secondary btn-sm">Reset Sandi</button>
                             </form>
