@@ -39,6 +39,21 @@ class AccessTest extends TestCase
         $this->get('/riwayat')->assertRedirect('/masuk');
     }
 
+    public function test_keluar_dengan_token_kedaluwarsa_tetap_keluar_tanpa_419(): void
+    {
+        $this->actingAs($this->user());
+
+        // Laravel mematikan cek CSRF saat test, jadi uji penangan exception-nya langsung.
+        $request = \Illuminate\Http\Request::create('/keluar', 'POST');
+        $request->setLaravelSession($this->app['session.store']);
+        $response = $this->app->make(\Illuminate\Contracts\Debug\ExceptionHandler::class)
+            ->render($request, new \Illuminate\Session\TokenMismatchException);
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertStringEndsWith('/masuk', $response->headers->get('Location'));
+        $this->assertGuest();
+    }
+
     public function test_sesi_akun_yang_dinonaktifkan_ditolak_pada_permintaan_berikutnya(): void
     {
         $u = $this->user(['aktif' => false]);

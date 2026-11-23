@@ -25,11 +25,7 @@
             sertifikat terbit bulan ini
         </h1>
         <p class="mt-2 text-white/75 max-w-[46ch]">
-            @if ($me->peran === 'admin')
-                Sertifikat dari semua pengguna tersimpan di sini. Unduh ulang menghasilkan PDF yang sama dengan unduhan pertama.
-            @else
-                Halaman ini hanya menampilkan sertifikat yang kamu terbitkan sendiri. Sertifikat pengguna lain hanya terlihat oleh Admin.
-            @endif
+            Sertifikat dari semua pengguna tersimpan di sini. Unduh ulang menghasilkan PDF yang sama dengan unduhan pertama.
         </p>
         <a href="{{ route('issue.form') }}" class="btn mt-6 bg-white text-fg hover:bg-zinc-100 shadow-lg"><i class="ph ph-plus"></i>Terbitkan</a>
     </div>
