@@ -5,11 +5,13 @@
 @php
     $v = fn ($k, $d = null) => old($k, $event[$k] ?? $d);
     $jenis = $v('jenis', 'seminar');
+    $seminar = $jenis === 'seminar';
+    $seminarLamaTanpaNomor = $event && $seminar && $event['jenis'] === 'seminar' && ! $event['bernomor'];
 @endphp
 <a href="{{ route('admin.events.index') }}" class="btn btn-ghost btn-sm -ml-3 mb-4" data-reveal><i class="ph ph-arrow-left"></i>Kegiatan</a>
 <x-page-header :title="$event ? 'Ubah kegiatan '.$event['kode'] : 'Tambah kegiatan'" subtitle="Kode ditetapkan manual sesuai dokumen aturan kode, bukan penghitung otomatis." />
 
-<form method="POST" action="{{ $event ? url('/admin/kegiatan/'.$event['id'].'/ubah') : url('/admin/kegiatan/baru') }}" class="card p-5 sm:p-7 max-w-3xl grid gap-5 md:grid-cols-2" data-reveal style="--i:1">
+<form id="event-form" method="POST" action="{{ $event ? url('/admin/kegiatan/'.$event['id'].'/ubah') : url('/admin/kegiatan/baru') }}" class="card p-5 sm:p-7 max-w-3xl grid gap-5 md:grid-cols-2" data-reveal style="--i:1">
     @csrf
     <div class="field md:col-span-2">
         <span class="label">Jenis</span>
@@ -44,7 +46,25 @@
         <input id="program_default" name="program_default" class="input" maxlength="200" value="{{ $v('program_default') }}" placeholder="Penetration Testing & Cyber Security Engineer">
     </div>
     <div class="md:col-span-2 grid gap-4 sm:grid-cols-3 rounded-2xl bg-alt p-4">
-        @foreach (['bernomor' => ['Bernomor', 'Bawaan mati untuk bootcamp'], 'pakai_qr' => ['Pakai QR', 'Umumnya hanya seminar'], 'aktif' => ['Aktif', 'Muncul di form Terbitkan']] as $key => [$lbl, $hint])
+        <div class="grid content-start gap-2" data-bernomor-field data-bernomor-mode="{{ $jenis }}">
+            <label class="switch">
+                <input type="hidden" name="bernomor" value="{{ $seminar ? '1' : '0' }}" data-bernomor-hidden>
+                <input type="checkbox" name="bernomor" value="1" data-bernomor-checkbox
+                    @checked($seminar || $v('bernomor'))
+                    @disabled($seminar)
+                    aria-describedby="bernomor-hint"
+                    @error('bernomor') aria-invalid="true" @enderror>
+                <span class="switch-track"></span>
+                <span>
+                    <span class="block text-sm font-medium text-fg">Bernomor</span>
+                    <span id="bernomor-hint" class="block text-xs text-muted" data-bernomor-hint>{{ $seminar ? 'Seminar/webinar wajib bernomor.' : 'Bawaan mati untuk bootcamp.' }}</span>
+                </span>
+            </label>
+            @error('bernomor')
+                <p class="error"><i class="ph-fill ph-warning-circle"></i>{{ $message }}</p>
+            @enderror
+        </div>
+        @foreach (['pakai_qr' => ['Pakai QR', 'Umumnya hanya seminar'], 'aktif' => ['Aktif', 'Muncul di form Terbitkan']] as $key => [$lbl, $hint])
             <label class="switch">
                 <input type="hidden" name="{{ $key }}" value="0">
                 <input type="checkbox" name="{{ $key }}" value="1" @checked($v($key, $key === 'aktif' || $jenis === 'seminar'))>
@@ -53,9 +73,57 @@
             </label>
         @endforeach
     </div>
+    @if ($seminarLamaTanpaNomor)
+        <div class="md:col-span-2 alert alert-info" role="status" data-bernomor-legacy>
+            <i class="ph-fill ph-info"></i>
+            <span>Kegiatan seminar lama ini belum bernomor. Penomoran akan diaktifkan saat kegiatan disimpan.</span>
+        </div>
+    @endif
     <div class="md:col-span-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-2">
         <a href="{{ route('admin.events.index') }}" class="btn btn-ghost">Kembali</a>
         <button class="btn btn-primary" data-loading-text="Menyimpan"><i class="ph ph-floppy-disk"></i><span data-label>Simpan Kegiatan</span></button>
     </div>
 </form>
+
+{{-- Seminar/webinar wajib bernomor: kunci switch saat jenis seminar. Skrip lokal
+     agar tidak mengubah perilaku global di app.js. --}}
+<script>
+(() => {
+    const form = document.getElementById('event-form');
+    if (!form) return;
+
+    const jenisSeminar = form.querySelector('#ej-seminar');
+    const jenisBootcamp = form.querySelector('#ej-bootcamp');
+    const field = form.querySelector('[data-bernomor-field]');
+    const checkbox = form.querySelector('[data-bernomor-checkbox]');
+    const hidden = form.querySelector('[data-bernomor-hidden]');
+    const hint = form.querySelector('[data-bernomor-hint]');
+    const legacy = form.querySelector('[data-bernomor-legacy]');
+
+    if (!jenisSeminar || !jenisBootcamp || !field || !checkbox || !hidden || !hint) return;
+
+    const sync = () => {
+        const seminar = jenisSeminar.checked;
+        field.dataset.bernomorMode = seminar ? 'seminar' : 'bootcamp';
+
+        if (seminar) {
+            // Checkbox dinonaktifkan agar tidak bisa dimatikan; hidden input
+            // memastikan payload bernomor=1 tetap terkirim.
+            checkbox.checked = true;
+            checkbox.disabled = true;
+            hidden.value = '1';
+            hint.textContent = 'Seminar/webinar wajib bernomor.';
+        } else {
+            checkbox.disabled = false;
+            hidden.value = '0';
+            hint.textContent = 'Bawaan mati untuk bootcamp.';
+        }
+
+        if (legacy) legacy.hidden = !seminar;
+    };
+
+    [jenisSeminar, jenisBootcamp].forEach((radio) => radio.addEventListener('change', sync));
+    sync();
+})();
+</script>
 @endsection

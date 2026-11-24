@@ -39,6 +39,26 @@ class EventManagementTest extends TestCase
         ]);
     }
 
+    /**
+     * Payload dasar form kegiatan untuk pengujian aturan penomoran.
+     *
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function eventPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'jenis' => 'seminar',
+            'kode' => '35',
+            'judul' => 'Koding Laravel: 20x Lebih Cepat dengan Hermes AI',
+            'penerbit' => 'Xcodetraining',
+            'program_default' => null,
+            'bernomor' => '1',
+            'pakai_qr' => '1',
+            'aktif' => '1',
+        ], $overrides);
+    }
+
     public function test_guest_diarahkan_ke_halaman_masuk(): void
     {
         $this->get('/admin/kegiatan')->assertRedirect('/masuk');
@@ -191,6 +211,207 @@ class EventManagementTest extends TestCase
         $this->assertEquals('ubah', $log->detail['tindakan']);
         $this->assertEquals('15', $log->detail['kode']);
         $this->assertEquals('Bootcamp Penetration Testing Judul Baru', $log->detail['judul']);
+    }
+
+    public function test_seminar_baru_dengan_bernomor_nol_ditolak(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $response = $this->post('/admin/kegiatan/baru', $this->eventPayload([
+            'bernomor' => '0',
+        ]));
+
+        $response->assertSessionHasErrors([
+            'bernomor' => 'Kegiatan seminar/webinar wajib memiliki penomoran aktif.',
+        ]);
+        $this->assertDatabaseMissing('events', ['kode' => '35']);
+    }
+
+    public function test_seminar_baru_tanpa_field_bernomor_ditolak(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $payload = $this->eventPayload();
+        unset($payload['bernomor']);
+
+        $response = $this->post('/admin/kegiatan/baru', $payload);
+
+        $response->assertSessionHasErrors('bernomor');
+        $this->assertDatabaseMissing('events', ['kode' => '35']);
+    }
+
+    public function test_seminar_tidak_bisa_diubah_menjadi_tanpa_nomor(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $event = Event::factory()->create([
+            'kode' => '35',
+            'judul' => 'Seminar Bernomor',
+            'jenis' => 'seminar',
+            'bernomor' => true,
+        ]);
+
+        $response = $this->post("/admin/kegiatan/{$event->id}/ubah", $this->eventPayload([
+            'judul' => 'Seminar Tetap Bernomor',
+            'bernomor' => '0',
+        ]));
+
+        $response->assertSessionHasErrors('bernomor');
+
+        $event->refresh();
+        $this->assertTrue($event->bernomor);
+        $this->assertSame('Seminar Bernomor', $event->judul);
+    }
+
+    public function test_bootcamp_tetap_boleh_tanpa_nomor_pada_create_dan_update(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $bootcampPayload = [
+            'jenis' => 'bootcamp',
+            'kode' => '15',
+            'judul' => 'Bootcamp Pentest',
+            'penerbit' => 'Bootcamp',
+            'program_default' => 'Penetration Testing & Cyber Security Engineer',
+            'bernomor' => '0',
+            'pakai_qr' => '0',
+        ];
+
+        $create = $this->post('/admin/kegiatan/baru', $this->eventPayload($bootcampPayload));
+        $create->assertRedirect('/admin/kegiatan');
+        $create->assertSessionHas('success');
+
+        $event = Event::where('kode', '15')->firstOrFail();
+        $this->assertFalse($event->bernomor);
+
+        $update = $this->post("/admin/kegiatan/{$event->id}/ubah", $this->eventPayload([
+            ...$bootcampPayload,
+            'judul' => 'Bootcamp Pentest Judul Baru',
+        ]));
+        $update->assertRedirect('/admin/kegiatan');
+        $update->assertSessionHas('success');
+
+        $event->refresh();
+        $this->assertFalse($event->bernomor);
+        $this->assertSame('Bootcamp Pentest Judul Baru', $event->judul);
+    }
+
+    public function test_perubahan_jenis_bootcamp_menjadi_seminar_dengan_bernomor_nol_ditolak(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $event = Event::factory()->create([
+            'kode' => '15',
+            'judul' => 'Bootcamp Akan Menjadi Seminar',
+            'jenis' => 'bootcamp',
+            'penerbit' => 'Bootcamp',
+            'bernomor' => false,
+            'pakai_qr' => false,
+        ]);
+
+        $response = $this->post("/admin/kegiatan/{$event->id}/ubah", $this->eventPayload([
+            'jenis' => 'seminar',
+            'judul' => 'Bootcamp Akan Menjadi Seminar',
+            'bernomor' => '0',
+            'pakai_qr' => '0',
+        ]));
+
+        $response->assertSessionHasErrors('bernomor');
+
+        $event->refresh();
+        $this->assertSame('bootcamp', $event->jenis);
+        $this->assertFalse($event->bernomor);
+    }
+
+    public function test_seminar_bernomor_tetap_dapat_dibuat_dan_diubah(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $create = $this->post('/admin/kegiatan/baru', $this->eventPayload());
+        $create->assertRedirect('/admin/kegiatan');
+        $create->assertSessionHas('success');
+
+        $event = Event::where('kode', '35')->firstOrFail();
+        $this->assertTrue($event->bernomor);
+
+        $update = $this->post("/admin/kegiatan/{$event->id}/ubah", $this->eventPayload([
+            'judul' => 'Koding Laravel: Judul Seminar Diperbarui',
+        ]));
+        $update->assertRedirect('/admin/kegiatan');
+        $update->assertSessionHas('success');
+
+        $event->refresh();
+        $this->assertTrue($event->bernomor);
+        $this->assertSame('Koding Laravel: Judul Seminar Diperbarui', $event->judul);
+    }
+
+    public function test_form_seminar_menampilkan_aturan_wajib_bernomor(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $response = $this->get('/admin/kegiatan/baru');
+
+        $response->assertOk();
+        $response->assertSee('data-bernomor-mode="seminar"', false);
+        $response->assertSee('name="bernomor" value="1"', false);
+        $response->assertSee('Seminar/webinar wajib bernomor.');
+    }
+
+    public function test_form_bootcamp_tidak_mengunci_penomoran(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $event = Event::factory()->create([
+            'jenis' => 'bootcamp',
+            'bernomor' => false,
+        ]);
+
+        $response = $this->get("/admin/kegiatan/{$event->id}/ubah");
+
+        $response->assertOk();
+        $response->assertSee('data-bernomor-mode="bootcamp"', false);
+        $response->assertDontSee('data-bernomor-mode="seminar"', false);
+        $response->assertSee('name="bernomor" value="0"', false);
+    }
+
+    public function test_form_seminar_lama_tanpa_nomor_menampilkan_info_aktivasi(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $event = Event::factory()->create([
+            'jenis' => 'seminar',
+            'bernomor' => false,
+        ]);
+
+        $response = $this->get("/admin/kegiatan/{$event->id}/ubah");
+
+        $response->assertOk();
+        $response->assertSee('data-bernomor-mode="seminar"', false);
+        $response->assertSee('Penomoran akan diaktifkan saat kegiatan disimpan.');
+    }
+
+    public function test_form_menampilkan_error_validasi_bernomor(): void
+    {
+        $admin = $this->createAdmin();
+        $this->actingAs($admin);
+
+        $response = $this->from('/admin/kegiatan/baru')->followingRedirects()->post('/admin/kegiatan/baru', $this->eventPayload([
+            'bernomor' => '0',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Kegiatan seminar/webinar wajib memiliki penomoran aktif.');
+        $response->assertSee('data-bernomor-mode="seminar"', false);
+        $response->assertSee('aria-invalid="true"', false);
     }
 
     public function test_admin_berhasil_toggle_aktif_nonaktif_kegiatan(): void

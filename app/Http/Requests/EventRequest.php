@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 
 class EventRequest extends FormRequest
@@ -44,7 +45,19 @@ class EventRequest extends FormRequest
             'judul' => ['required', 'string', 'max:500'],
             'penerbit' => ['required', 'string', 'max:50'],
             'program_default' => ['nullable', 'string', 'max:200'],
-            'bernomor' => ['required', 'boolean'],
+            // Aturan bisnis PRD/PD-07: seminar/webinar wajib bernomor. Bootcamp
+            // tetap boleh tanpa nomor sesuai PRD bagian 5.2 butir 6.
+            // prepareForValidation() menormalkan field yang tidak dikirim menjadi
+            // false, sehingga kasus "field tidak dikirim" ikut tertolak di sini.
+            'bernomor' => [
+                'required',
+                'boolean',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if ($this->input('jenis') === 'seminar' && ! $value) {
+                        $fail('Kegiatan seminar/webinar wajib memiliki penomoran aktif.');
+                    }
+                },
+            ],
             'pakai_qr' => ['required', 'boolean'],
             'aktif' => ['required', 'boolean'],
         ];
