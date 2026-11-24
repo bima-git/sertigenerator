@@ -123,7 +123,13 @@ class HistoryController extends Controller
             abort(403, 'Hanya peran Admin yang berwenang membatalkan sertifikat.');
         }
 
-        $certificate = $historyService->cancel($id, $validated['alasan'], $admin);
+        try {
+            $certificate = $historyService->cancel($id, $validated['alasan'], $admin);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
 
         return response()->json([
             'message'        => "Sertifikat {$certificate->nomor_lengkap} berhasil dibatalkan.",

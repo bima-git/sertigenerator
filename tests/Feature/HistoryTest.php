@@ -231,4 +231,39 @@ class HistoryTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['alasan']);
     }
+
+    /**
+     * P3: Memastikan pembatalan ganda ditolak terkontrol dengan HTTP 422 (bukan HTTP 500).
+     */
+    public function test_cannot_cancel_already_cancelled_certificate(): void
+    {
+        // Pembatalan pertama sukses
+        $this->actingAs($this->admin)->postJson(
+            route('history.cancel', ['id' => $this->certificate->id]),
+            ['alasan' => 'Salah ketik nama']
+        )->assertOk();
+
+        // Pembatalan kedua harus ditolak HTTP 422 dengan pesan terkontrol
+        $response = $this->actingAs($this->admin)->postJson(
+            route('history.cancel', ['id' => $this->certificate->id]),
+            ['alasan' => 'Membatalkan kembali']
+        );
+
+        $response->assertStatus(422)
+            ->assertJson(['message' => 'Sertifikat ini sudah dibatalkan sebelumnya.']);
+    }
+
+    /**
+     * P3: Memastikan route riwayat dengan ID non-numerik mengembalikan HTTP 404 (bukan TypeError/500).
+     */
+    public function test_history_routes_with_non_numeric_id_returns_404(): void
+    {
+        $this->actingAs($this->admin)
+            ->get('/riwayat/bukan-angka/pdf')
+            ->assertNotFound();
+
+        $this->actingAs($this->admin)
+            ->postJson('/riwayat/bukan-angka/batalkan', ['alasan' => 'Uji non-numerik'])
+            ->assertNotFound();
+    }
 }

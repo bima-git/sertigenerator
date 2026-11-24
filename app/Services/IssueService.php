@@ -49,6 +49,10 @@ class IssueService
                 throw new InvalidArgumentException("Jenis kegiatan tidak sesuai dengan data formulir.");
             }
 
+            if ($event->jenis === 'seminar' && ! $event->bernomor) {
+                throw new InvalidArgumentException("Kegiatan seminar [{$event->judul}] wajib memiliki penomoran aktif.");
+            }
+
             $date = Carbon::parse($data['tanggal_terbit'], 'Asia/Jakarta');
             $tahun = (int) $date->format('Y');
 
@@ -139,6 +143,10 @@ class IssueService
 
         if ($event->jenis !== $data['jenis']) {
             throw new InvalidArgumentException("Jenis kegiatan tidak sesuai dengan data formulir.");
+        }
+
+        if ($event->jenis === 'seminar' && ! $event->bernomor) {
+            throw new InvalidArgumentException("Kegiatan seminar [{$event->judul}] wajib memiliki penomoran aktif.");
         }
 
         $date = Carbon::parse($data['tanggal_terbit'], 'Asia/Jakarta');

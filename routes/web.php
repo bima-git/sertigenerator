@@ -54,8 +54,8 @@ Route::get('/api/nomor', [IssueController::class, 'suggest'])->name('api.number'
 /* Aksi penerbitan, pratinjau, unduh ulang, pembatalan */
 Route::post('/pratinjau', [IssueController::class, 'preview'])->name('issue.preview');
 Route::post('/terbitkan', [IssueController::class, 'store'])->name('issue.store');
-Route::get('/riwayat/{id}/pdf', [HistoryController::class, 'download'])->name('history.pdf');
-Route::post('/riwayat/{id}/batalkan', [HistoryController::class, 'cancel'])->name('history.cancel');
+Route::get('/riwayat/{id}/pdf', [HistoryController::class, 'download'])->whereNumber('id')->name('history.pdf');
+Route::post('/riwayat/{id}/batalkan', [HistoryController::class, 'cancel'])->whereNumber('id')->name('history.cancel');
 
 Route::prefix('admin')->name('admin.')->middleware('can:admin')->group(function () {
     Route::get('/kegiatan', [EventController::class, 'index'])->name('events.index');

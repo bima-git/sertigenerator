@@ -333,4 +333,64 @@ class IssueCertificateTest extends TestCase
         $response->assertJsonValidationErrors(['event_id']);
         $this->assertStringContainsString('tidak sesuai', $response->json('errors.event_id.0'));
     }
+
+    /**
+     * Memastikan kegiatan seminar tanpa penomoran (bernomor=false) ditolak (HTTP 422)
+     * saat penerbitan, mencegah RenderException/500 di engine PDF.
+     */
+    public function test_cannot_issue_seminar_certificate_without_numbering(): void
+    {
+        $unnumberedSeminar = Event::create([
+            'kode'     => '99',
+            'judul'    => 'Seminar Khusus Tanpa Nomor',
+            'jenis'    => 'seminar',
+            'penerbit' => 'Xcodetraining',
+            'bernomor' => false,
+            'pakai_qr' => true,
+            'aktif'    => true,
+        ]);
+
+        $payload = [
+            'jenis'          => 'seminar',
+            'event_id'       => $unnumberedSeminar->id,
+            'nama_peserta'   => 'Peserta Uji',
+            'tanggal_terbit' => '2026-10-24',
+        ];
+
+        $response = $this->actingAs($this->user)->postJson(route('issue.store'), $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['event_id']);
+        $this->assertStringContainsString('wajib memiliki penomoran aktif', $response->json('errors.event_id.0'));
+    }
+
+    /**
+     * Memastikan kegiatan seminar tanpa penomoran (bernomor=false) ditolak (HTTP 422)
+     * saat pratinjau, mencegah RenderException/500 di engine PDF.
+     */
+    public function test_cannot_preview_seminar_certificate_without_numbering(): void
+    {
+        $unnumberedSeminar = Event::create([
+            'kode'     => '99',
+            'judul'    => 'Seminar Khusus Tanpa Nomor',
+            'jenis'    => 'seminar',
+            'penerbit' => 'Xcodetraining',
+            'bernomor' => false,
+            'pakai_qr' => true,
+            'aktif'    => true,
+        ]);
+
+        $payload = [
+            'jenis'          => 'seminar',
+            'event_id'       => $unnumberedSeminar->id,
+            'nama_peserta'   => 'Peserta Pratinjau',
+            'tanggal_terbit' => '2026-10-24',
+        ];
+
+        $response = $this->actingAs($this->user)->postJson(route('issue.preview'), $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['event_id']);
+        $this->assertStringContainsString('wajib memiliki penomoran aktif', $response->json('errors.event_id.0'));
+    }
 }

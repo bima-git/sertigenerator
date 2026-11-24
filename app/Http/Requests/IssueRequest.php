@@ -84,6 +84,8 @@ class IssueRequest extends FormRequest
                         $validator->errors()->add('event_id', "Kegiatan [{$event->judul}] sudah tidak aktif.");
                     } elseif ($this->filled('jenis') && $event->jenis !== $this->input('jenis')) {
                         $validator->errors()->add('event_id', 'Jenis kegiatan tidak sesuai dengan jenis formulir.');
+                    } elseif ($event->jenis === 'seminar' && ! $event->bernomor) {
+                        $validator->errors()->add('event_id', "Kegiatan seminar [{$event->judul}] wajib memiliki penomoran aktif.");
                     }
                 }
             }
