@@ -20,6 +20,21 @@ return Application::configure(basePath: dirname(__DIR__))
             ? response()->json(['message' => $e->getMessage()], 409)
             : back()->withInput()->with('error', $e->getMessage()));
 
+        // Nama/judul tidak muat di sertifikat (PRD PD-05, PD-06): galat isian 422, bukan 500.
+        $exceptions->render(function (\App\Exceptions\TextOverflowException $e, $request) {
+            $field = $e->fieldIn($request);
+            $pesan = $field === 'nama_peserta'
+                ? 'Nama terlalu panjang untuk sertifikat walau huruf sudah diperkecil. Persingkat nama, misalnya dengan menyingkat nama tengah.'
+                : 'Teks ini terlalu panjang untuk sertifikat walau huruf sudah diperkecil. Persingkat lalu coba lagi.';
+
+            throw \Illuminate\Validation\ValidationException::withMessages([$field => [$pesan]]);
+        });
+
+        // Galat sistem diberi kode rujukan: tercatat di log dan ditampilkan di halaman 500 (PRD AD-03).
+        $exceptions->report(function (\Throwable $e) {
+            \Illuminate\Support\Facades\Context::addIf('ref', strtoupper(\Illuminate\Support\Str::random(8)));
+        });
+
         // Token form kedaluwarsa (tab lama, sesi habis, atau akun berganti di tab lain).
         // Keluar tetap dijalankan; form lain kembali ke halamannya dengan pesan, bukan halaman 419.
         // Laravel sudah mengubah TokenMismatchException menjadi HttpException 419 sebelum callback ini.

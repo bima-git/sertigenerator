@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\TextOverflowException;
 use App\Http\Requests\IssueRequest;
+use App\Models\Certificate;
 use App\Models\Event;
 use App\Models\User;
 use App\Services\IssueService;
@@ -94,6 +96,49 @@ class IssueController extends Controller
         );
 
         return response()->json($suggestion);
+    }
+
+    /**
+     * Sertifikat terbit dengan nama yang sama pada kegiatan yang sama (PRD FM-11).
+     * Hanya peringatan: operator tetap boleh menerbitkan.
+     *
+     * Rute: GET /api/nama-sama (Nama: api.same-name)
+     */
+    public function sameName(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'event_id' => ['required', 'integer'],
+            'nama'     => ['required', 'string', 'max:100'],
+        ]);
+
+        $nama = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $validated['nama'])));
+
+        return response()->json(Certificate::query()
+            ->where('event_id', $validated['event_id'])
+            ->where('status', 'terbit')
+            ->whereRaw('LOWER(nama_peserta) = ?', [$nama])
+            ->latest()->limit(5)
+            ->get(['id', 'nomor_lengkap', 'tanggal_terbit'])
+            ->map(fn ($c) => ['id' => $c->id, 'nomor' => $c->nomor_lengkap, 'tanggal' => $c->tanggal_terbit->translatedFormat('j F Y')]));
+    }
+
+    /**
+     * Memeriksa apakah nama dan judul muat di sertifikat dengan renderer yang sama
+     * seperti saat terbit, sebelum tombol Terbitkan ditekan (PRD PD-05, PD-06).
+     *
+     * Rute: POST /api/cek-teks (Nama: api.text-check)
+     */
+    public function checkText(IssueRequest $request, IssueService $issueService): JsonResponse
+    {
+        try {
+            $issueService->preview($request->validated());
+        } catch (TextOverflowException $e) {
+            return response()->json(['muat' => false, 'field' => $e->fieldIn($request)]);
+        } catch (\InvalidArgumentException) {
+            return response()->json(['muat' => null]); // Data belum lengkap/valid; pesan lain sudah menangani.
+        }
+
+        return response()->json(['muat' => true]);
     }
 
     /**

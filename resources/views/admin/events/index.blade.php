@@ -20,6 +20,12 @@
         <option value="seminar" @selected(request('jenis') === 'seminar')>Seminar/Webinar</option>
         <option value="bootcamp" @selected(request('jenis') === 'bootcamp')>Bootcamp/Magang</option>
     </select>
+    <label for="status" class="sr-only">Status</label>
+    <select id="status" name="status" class="input sm:w-44" onchange="this.form.requestSubmit()">
+        <option value="">Semua status</option>
+        <option value="aktif" @selected(request('status') === 'aktif')>Aktif</option>
+        <option value="nonaktif" @selected(request('status') === 'nonaktif')>Nonaktif</option>
+    </select>
 </form>
 
 <section class="card overflow-hidden" data-reveal style="--i:1" data-live-region="list">

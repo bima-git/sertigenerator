@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Contracts\TextMeasurer;
 use App\DTO\FitResult;
-use App\Exceptions\RenderException;
+use App\Exceptions\TextOverflowException;
 use InvalidArgumentException;
 
 /**
@@ -74,7 +74,7 @@ final class TextFitter
             return new FitResult($lines, $current);
         }
 
-        throw new RenderException(sprintf(
+        throw new TextOverflowException($text, sprintf(
             'Teks "%s" tidak muat pada lebar %.1f mm walau sudah %.1f pt dan maksimum %d baris.',
             $text,
             $maxWidth,

@@ -95,9 +95,9 @@
 <form method="GET" data-live class="card mt-5 p-4 sm:p-5 grid gap-4" data-reveal style="--i:7" role="search">
     <div class="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]">
         <div class="relative">
-            <label for="q" class="sr-only">Cari nama atau nomor</label>
+            <label for="q" class="sr-only">Cari nama, nomor, atau kegiatan</label>
             <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none"></i>
-            <input id="q" name="q" value="{{ request('q') }}" class="input pl-10" placeholder="Cari nama atau nomor sertifikat">
+            <input id="q" name="q" value="{{ request('q') }}" class="input pl-10" placeholder="Cari nama, nomor, atau kegiatan">
         </div>
         <label class="sr-only" for="dari">Dari tanggal</label>
         <input id="dari" name="dari" type="date" class="input" value="{{ request('dari') }}" title="Dari tanggal">

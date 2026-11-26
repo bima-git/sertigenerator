@@ -92,7 +92,7 @@
                     <form action="{{ route('history.index') }}" method="GET" class="search-pill w-[320px]" role="search">
                         <i class="ph ph-magnifying-glass"></i>
                         <label for="top-search" class="sr-only">Cari sertifikat</label>
-                        <input id="top-search" name="q" placeholder="Cari nama atau nomor sertifikat" value="{{ request()->is('riwayat') ? request('q') : '' }}">
+                        <input id="top-search" name="q" placeholder="Cari nama, nomor, atau kegiatan" value="{{ request()->is('riwayat') ? request('q') : '' }}">
                     </form>
                     @if ($isAdmin)
                         <a href="{{ route('admin.audit') }}" class="round-btn" aria-label="Aktivitas terbaru"><i class="ph ph-bell"></i></a>

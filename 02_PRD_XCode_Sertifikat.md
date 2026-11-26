@@ -161,7 +161,7 @@ Kebutuhan produk secara rinci: peran, kebutuhan fungsional, penomoran, PDF, data
 | PD-10 | Nama berkas `Sertifikat_{Jenis}_{Nama}.pdf`. | Karakter tidak aman dibuang. `Mu'ammal Hamidy` menjadi `Muammal_Hamidy`. |
 | PD-11 | Teks pada PDF dapat dipilih dan dicari. | Teks tidak diubah menjadi gambar. |
 | PD-12 | Metadata PDF terisi: judul, penulis, subjek. | Judul memuat nama peserta. |
-| PD-13 | Mode QR dapat diatur: alamat tetap atau alamat per nomor. | Bawaan alamat tetap. Diatur di konfigurasi. |
+| PD-13 | QR berisi satu alamat tetap `https://xcode.co.id/cekkodesertifikat`. | Diputuskan tim (catatan Ifan): mode per nomor dihapus. Alamat diatur di `config/certificate.php`. |
 
 ### 4.6 Riwayat
 
