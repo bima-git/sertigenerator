@@ -52,6 +52,9 @@ export function initIssueForm() {
     let suggestion = null;
     let urutTouched = Boolean(f.urut.value);
     let activeIndex = -1;
+    let sameName = []; // FM-11: sertifikat terbit dengan nama yang sama pada kegiatan ini
+    let overflow = null; // PD-05/06: field yang tidak muat di sertifikat menurut renderer
+    const FIELD_LABEL = { nama_peserta: 'Nama peserta', judul_cetak: 'Judul pada sertifikat', program: 'Program', perusahaan: 'Perusahaan' };
 
     /* ---------- Jenis ---------- */
     function applyJenis() {
@@ -168,6 +171,45 @@ export function initIssueForm() {
         }, 220);
     }
 
+    /* ---------- Pemeriksaan di latar: nama ganda (FM-11) dan teks muat (PD-05/06) ---------- */
+    let sameTimer, sameKey = '';
+    function checkSameName() {
+        const nama = f.nama.value.trim();
+        const key = `${event?.id}|${nama.toLowerCase()}`;
+        if (key === sameKey) return;
+        sameKey = key;
+        clearTimeout(sameTimer);
+        sameName = [];
+        if (!event || nama.length < 2) return;
+        sameTimer = setTimeout(async () => {
+            try {
+                const { data } = await window.axios.get('/api/nama-sama', { params: { event_id: event.id, nama } });
+                if (key !== sameKey) return;
+                sameName = data;
+                renderWarnings(...state());
+            } catch { /* peringatan saja; abaikan bila gagal */ }
+        }, 400);
+    }
+
+    let fitTimer, fitKey = '';
+    function checkFit(complete) {
+        const key = complete ? [jenis, event?.id, f.nama.value, f.judul.value, f.program.value, f.perusahaan.value].join('|') : '';
+        if (key === fitKey) return;
+        fitKey = key;
+        clearTimeout(fitTimer);
+        overflow = null;
+        if (!complete) return;
+        fitTimer = setTimeout(async () => {
+            try {
+                const { data } = await window.axios.post('/api/cek-teks', new FormData(form), { headers: { Accept: 'application/json' } });
+                if (key !== fitKey) return;
+                overflow = data.muat === false ? data.field : null;
+                renderWarnings(...state());
+                renderSubmit(...state());
+            } catch { /* validasi belum lengkap; server tetap memeriksa saat terbit */ }
+        }, 700);
+    }
+
     function localSuggestion() {
         const d = new Date(f.terbit.value || Date.now());
         const urut = Number(urutTouched && f.urut.value ? f.urut.value : 1);
@@ -239,8 +281,14 @@ export function initIssueForm() {
         el.classList.add('flash');
     }
 
-    function render() {
+    function state() {
         const bernomor = jenis === 'seminar' ? (event?.bernomor ?? true) : Boolean(event?.bernomor);
+        const badDates = Boolean(f.mulai.value && f.selesai.value && f.selesai.value < f.mulai.value);
+        return [bernomor, badDates];
+    }
+
+    function render() {
+        const [bernomor] = state();
         ui.number.hidden = !bernomor;
         ui.noNumber.hidden = bernomor;
         form.querySelectorAll('[data-numbered]').forEach((el) => {
@@ -267,10 +315,13 @@ export function initIssueForm() {
         ui.restoreJudul.hidden = !(event && jenis === 'seminar' && f.judul.value !== event.judul);
         ui.useSuggest.hidden = !(bernomor && suggestion?.urut_saran && urutTouched && Number(f.urut.value) !== suggestion.urut_saran);
 
-        const badDates = f.mulai.value && f.selesai.value && f.selesai.value < f.mulai.value;
+        const [, badDates] = state();
         ui.dateErr.hidden = !badDates;
-        f.selesai.setAttribute('aria-invalid', String(Boolean(badDates)));
+        f.selesai.setAttribute('aria-invalid', String(badDates));
 
+        // Pemeriksaan latar dijadwalkan dulu agar hasil lama dibuang sebelum peringatan digambar.
+        checkSameName();
+        checkFit(renderSubmit(bernomor, badDates));
         renderWarnings(bernomor, badDates);
         renderSubmit(bernomor, badDates);
     }
@@ -279,8 +330,12 @@ export function initIssueForm() {
         const w = [];
         if (suggestion && bernomor && suggestion.is_available === false) w.push(['danger', `Nomor urut ${f.urut.value} sudah dipakai. Gunakan nomor urut ${suggestion.urut_saran}.`]);
         if (f.terbit.value && Math.abs(new Date(f.terbit.value) - Date.now()) > 365 * 864e5) w.push(['warning', 'Tanggal terbit lebih dari satu tahun dari hari ini.']);
-        if (jenis === 'seminar' && f.judul.value.length > 120) w.push(['warning', 'Judul mungkin lebih dari dua baris. Pertimbangkan untuk mempersingkat.']);
-        if (f.nama.value.length > 50) w.push(['warning', 'Nama sangat panjang, ukuran huruf di sertifikat akan mengecil.']);
+        if (overflow) w.push(['danger', `${FIELD_LABEL[overflow] ?? 'Teks'} tidak muat di sertifikat walau huruf sudah diperkecil. Persingkat dulu sebelum menerbitkan.`]);
+        else if (f.nama.value.length > 50) w.push(['warning', 'Nama sangat panjang, ukuran huruf di sertifikat akan mengecil.']);
+        if (sameName.length) {
+            const nomor = sameName.map((c) => c.nomor ? `${c.nomor} (${c.tanggal})` : c.tanggal).join(', ');
+            w.push(['warning', `Nama ini sudah pernah diterbitkan pada kegiatan ini: ${nomor}. Periksa agar tidak ganda; kamu tetap boleh melanjutkan.`]);
+        }
         if (badDates) w.push(['danger', 'Tanggal selesai tidak boleh sebelum tanggal mulai.']);
         if (f.nama.value && !/^[\p{L}\s.,'\-]+$/u.test(f.nama.value)) w.push(['danger', 'Nama hanya boleh berisi huruf, spasi, titik, koma, apostrof, dan tanda hubung.']);
 
@@ -306,9 +361,12 @@ export function initIssueForm() {
             if (!f.mulai.value) missing.push('tanggal mulai');
             if (!f.selesai.value) missing.push('tanggal selesai');
         }
-        const blocked = missing.length > 0 || badDates;
-        ui.submit.disabled = blocked;
-        ui.reason.textContent = missing.length ? `Lengkapi ${missing.join(', ')}.` : (badDates ? 'Perbaiki tanggal selesai.' : '');
+        const complete = missing.length === 0 && !badDates;
+        ui.submit.disabled = !complete || Boolean(overflow);
+        ui.reason.textContent = missing.length ? `Lengkapi ${missing.join(', ')}.`
+            : badDates ? 'Perbaiki tanggal selesai.'
+            : overflow ? `Persingkat ${(FIELD_LABEL[overflow] ?? 'teks').toLowerCase()} agar muat di sertifikat.` : '';
+        return complete;
     }
 
     /* ---------- Kirim: Terbitkan & Unduh / Pratinjau ---------- */
@@ -371,7 +429,7 @@ export function initIssueForm() {
                 p.querySelector('span').textContent = msgs[0];
                 fieldEl.append(p);
             });
-            form.querySelector('[aria-invalid="true"]')?.focus();
+            showSummary(Object.entries(body.errors).map(([name, msgs]) => [name, msgs[0]]));
             toast('Periksa kembali isian yang ditandai.', 'warning');
         } else if (ex.response?.status === 419) {
             toast('Sesi form berakhir. Muat ulang halaman lalu coba lagi.', 'danger');
@@ -383,7 +441,29 @@ export function initIssueForm() {
         }
     }
 
+    /* FM-10: ringkasan kesalahan di atas form, tiap butir membawa ke field-nya. */
+    function showSummary(items) {
+        const box = document.getElementById('error-summary');
+        const list = box.querySelector('ul');
+        list.replaceChildren(...items.map(([name, msg]) => {
+            const li = document.createElement('li');
+            const a = Object.assign(document.createElement('a'), { href: '#', textContent: msg, className: 'underline underline-offset-2' });
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                const input = form.querySelector(`[name="${name}"]`);
+                (input?.type === 'hidden' ? f.search : input)?.focus();
+            });
+            li.append(a);
+            return li;
+        }));
+        box.hidden = false;
+        box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        box.focus({ preventScroll: true });
+    }
+
     function clearErrors() {
+        const box = document.getElementById('error-summary');
+        if (box) box.hidden = true;
         form.querySelectorAll('[data-client-error]').forEach((el) => el.remove());
         form.querySelectorAll('[aria-invalid="true"]').forEach((el) => el.removeAttribute('aria-invalid'));
     }

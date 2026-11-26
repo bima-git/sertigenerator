@@ -27,6 +27,7 @@
         <label for="kode" class="label">Kode kegiatan</label>
         <input id="kode" name="kode" class="input num" maxlength="10" required value="{{ $v('kode') }}" placeholder="35" @error('kode') aria-invalid="true" @enderror>
         <p class="hint">Teks, boleh sama dengan versi kegiatan lain.</p>
+        <p class="hint !text-warning flex gap-1.5" data-kode-dipakai hidden><i class="ph-fill ph-warning mt-0.5"></i><span></span></p>
         @error('kode') <p class="error"><i class="ph-fill ph-warning-circle"></i>{{ $message }}</p> @enderror
     </div>
     <div class="field">
@@ -123,6 +124,33 @@
     };
 
     [jenisSeminar, jenisBootcamp].forEach((radio) => radio.addEventListener('change', sync));
+    sync();
+})();
+
+/* PRD KG-04: kode yang sama boleh dipakai, tetapi setelah konfirmasi yang menyebut kegiatan pemakainya.
+   Konfirmasi memakai dialog [data-confirm] dari app.js; server tetap menerima kode ganda. */
+(() => {
+    const form = document.getElementById('event-form');
+    const input = form?.querySelector('#kode');
+    const note = form?.querySelector('[data-kode-dipakai]');
+    if (!input || !note) return;
+    const lain = @json(\App\Models\Event::query()->when($event, fn ($q) => $q->whereKeyNot($event['id']))->get(['kode', 'judul']));
+
+    const sync = () => {
+        const kode = input.value.trim().toLowerCase();
+        const pakai = kode ? lain.filter((e) => String(e.kode).toLowerCase() === kode).map((e) => `"${e.judul}"`) : [];
+        note.hidden = !pakai.length;
+        if (!pakai.length) {
+            delete form.dataset.confirm;
+            return;
+        }
+        const daftar = pakai.slice(0, 3).join(', ') + (pakai.length > 3 ? `, dan ${pakai.length - 3} lainnya` : '');
+        note.querySelector('span').textContent = `Kode ini sudah dipakai: ${daftar}.`;
+        form.dataset.confirmTitle = `Kode ${input.value.trim()} sudah dipakai`;
+        form.dataset.confirm = `Kode ini juga dipakai kegiatan ${daftar}. Tetap simpan dengan kode yang sama?`;
+        form.dataset.confirmTone = 'brand';
+    };
+    input.addEventListener('input', sync);
     sync();
 })();
 </script>

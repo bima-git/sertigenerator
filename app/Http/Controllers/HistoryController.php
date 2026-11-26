@@ -25,7 +25,10 @@ class HistoryController extends Controller
         abort_unless($me, 401);
 
         $certificates = Certificate::query()->with(['event:id,kode,judul', 'creator:id,nama'])
-            ->when($request->query('q'), fn ($q, $s) => $q->where(fn ($w) => $w->where('nama_peserta', 'like', "%{$s}%")->orWhere('nomor_lengkap', 'like', "%{$s}%")))
+            // Cari menurut nama, nomor, atau kegiatan (kode/judul) sekaligus (PRD RW-02).
+            ->when($request->query('q'), fn ($q, $s) => $q->where(fn ($w) => $w->where('nama_peserta', 'like', "%{$s}%")
+                ->orWhere('nomor_lengkap', 'like', "%{$s}%")
+                ->orWhereHas('event', fn ($e) => $e->where('kode', $s)->orWhere('judul', 'like', "%{$s}%"))))
             ->when($request->query('jenis'), fn ($q, $v) => $q->whereIn('jenis', (array) $v))
             ->when($request->query('status'), fn ($q, $v) => $q->whereIn('status', (array) $v))
             ->when($request->query('dari'), fn ($q, $v) => $q->whereDate('tanggal_terbit', '>=', $v))

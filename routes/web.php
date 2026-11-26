@@ -50,6 +50,8 @@ Route::post('/akun/sandi', [AccountController::class, 'password'])->name('accoun
 /* API form penerbitan (Design System 3.3) */
 Route::get('/api/kegiatan', [IssueController::class, 'events'])->name('api.events');
 Route::get('/api/nomor', [IssueController::class, 'suggest'])->name('api.number');
+Route::get('/api/nama-sama', [IssueController::class, 'sameName'])->name('api.same-name');
+Route::post('/api/cek-teks', [IssueController::class, 'checkText'])->name('api.text-check');
 
 /* Aksi penerbitan, pratinjau, unduh ulang, pembatalan */
 Route::post('/pratinjau', [IssueController::class, 'preview'])->name('issue.preview');

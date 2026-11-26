@@ -24,6 +24,7 @@ class EventController extends Controller
     {
         $events = Event::query()
             ->when($request->query('jenis'), fn ($q, $j) => $q->where('jenis', $j))
+            ->when(in_array($request->query('status'), ['aktif', 'nonaktif'], true), fn ($q) => $q->where('aktif', $request->query('status') === 'aktif'))
             ->when($request->query('q'), function ($q, $s) {
                 $q->where(function ($w) use ($s) {
                     $w->where('kode', 'like', "%{$s}%")

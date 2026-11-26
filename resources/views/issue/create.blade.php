@@ -13,6 +13,16 @@
 
     {{-- Isian --}}
     <section class="card p-5 sm:p-7 lg:[grid-area:fields]" data-reveal style="--i:1" aria-label="Data sertifikat">
+        {{-- Ringkasan kesalahan (PRD FM-10). Diisi server bila kembali dari validasi, atau oleh issue-form.js. --}}
+        <div id="error-summary" class="alert alert-danger mb-6 scroll-mt-24" role="alert" tabindex="-1" @if (! $errors->any()) hidden @endif>
+            <i class="ph-fill ph-warning-octagon"></i>
+            <div>
+                <p class="font-semibold">Ada isian yang perlu diperbaiki:</p>
+                <ul class="mt-1 list-disc pl-5 grid gap-0.5">
+                    @foreach ($errors->all() as $msg) <li>{{ $msg }}</li> @endforeach
+                </ul>
+            </div>
+        </div>
         <div class="segmented w-full sm:w-auto" style="--count:2">
             <span class="segmented-thumb" aria-hidden="true"></span>
             <input type="radio" name="jenis" id="jenis-seminar" value="seminar" @checked($jenis === 'seminar')>
