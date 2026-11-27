@@ -16,6 +16,13 @@
         <span class="mx-auto grid place-items-center size-20 rounded-full bg-gradient-to-br from-accent to-brand text-2xl font-semibold text-white">{{ collect(explode(' ', $me->nama))->take(2)->map(fn ($p) => mb_substr($p, 0, 1))->join('') }}</span>
         <h2 class="mt-4 text-lg font-semibold">{{ $me->nama }}</h2>
         <p class="text-sm text-muted">{{ $me->username }}</p>
+        @if ($emailSiap)
+            @if ($me->email)
+                <p class="mt-1 text-sm text-muted break-all"><i class="ph ph-envelope-simple"></i> {{ $me->email }}</p>
+            @else
+                <p class="mt-2 text-xs text-warning">Belum ada email. Minta Admin mengisinya agar bisa reset kata sandi sendiri.</p>
+            @endif
+        @endif
         <span class="badge {{ $me->peran === 'admin' ? 'badge-brand' : 'badge-neutral' }} mt-3">{{ $me->peran === 'admin' ? 'Admin' : 'Operator' }}</span>
     </section>
 
