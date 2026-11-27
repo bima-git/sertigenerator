@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminUserSeeder::class,
             EventSeeder::class,
+            DemoDataSeeder::class, // Data contoh; dilewati di production.
         ]);
     }
 }
