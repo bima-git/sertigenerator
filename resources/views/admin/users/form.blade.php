@@ -21,8 +21,7 @@
         <input id="username" name="username" class="input" maxlength="50" required value="{{ $v('username') }}" autocomplete="off" @error('username') aria-invalid="true" @enderror>
         @error('username') <p class="error"><i class="ph-fill ph-warning-circle"></i>{{ $message }}</p> @enderror
     </div>
-    @if ($emailSiap)
-        <div class="field md:col-span-2">
+    <div class="field md:col-span-2">
             <label for="email" class="label">Email <span class="font-normal text-muted">(untuk masuk dan reset kata sandi)</span></label>
             <input id="email" name="email" type="email" class="input" maxlength="255" value="{{ $v('email') }}"
                    autocomplete="off" inputmode="email" spellcheck="false" autocapitalize="off" placeholder="nama@xcode.co.id"
@@ -36,7 +35,6 @@
             </p>
             @error('email') <p class="error"><i class="ph-fill ph-warning-circle"></i>{{ $message }}</p> @enderror
         </div>
-    @endif
     <div class="field">
         <label for="peran" class="label">Peran</label>
         <select id="peran" name="peran" class="input" @disabled($self)>

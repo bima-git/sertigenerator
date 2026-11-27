@@ -24,7 +24,7 @@
                     <td data-label="Nama">
                         <span class="flex items-center gap-3">
                             <span class="grid place-items-center size-9 flex-none rounded-full bg-brand-soft text-brand text-xs font-semibold">{{ collect(explode(' ', $u['nama']))->take(2)->map(fn ($p) => mb_substr($p, 0, 1))->join('') }}</span>
-                            <span class="text-left"><span class="block font-medium text-fg">{{ $u['nama'] }}</span><span class="block text-xs text-muted">{{ $u['username'] }}</span>@if ($emailSiap)<span class="block text-xs {{ $u['email'] ? 'text-muted' : 'text-warning' }}">{{ $u['email'] ?: 'Belum ada email' }}</span>@endif</span>
+                            <span class="text-left"><span class="block font-medium text-fg">{{ $u['nama'] }}</span><span class="block text-xs text-muted">{{ $u['username'] }}</span><span class="block text-xs {{ $u['email'] ? 'text-muted' : 'text-warning' }}">{{ $u['email'] ?: 'Belum ada email' }}</span></span>
                         </span>
                     </td>
                     <td data-label="Peran"><span class="badge {{ $u['peran'] === 'admin' ? 'badge-brand' : 'badge-neutral' }}">{{ $u['peran'] === 'admin' ? 'Admin' : 'Operator' }}</span></td>

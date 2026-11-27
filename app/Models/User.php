@@ -20,6 +20,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'username',
+        'email',
         'nama',
         'password',
         'peran',
@@ -55,4 +56,19 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->peran === 'admin';
-    }}
+    }
+
+    /** Email disimpan huruf kecil tanpa spasi supaya login dan reset tidak peka huruf besar. */
+    protected function email(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            set: fn (?string $value) => $value === null || trim($value) === '' ? null : mb_strtolower(trim($value)),
+        );
+    }
+
+    /** Email reset kata sandi berbahasa Indonesia, tautannya ke halaman /reset-sandi. */
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify(new \App\Notifications\ResetKataSandi($token));
+    }
+}

@@ -22,7 +22,8 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => ['required', 'string', 'max:50'],
+            // Berisi username atau email (masa transisi login email).
+            'username' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ];
     }
@@ -35,8 +36,8 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'username.required' => 'Username wajib diisi.',
-            'username.max'      => 'Username tidak boleh melebihi 50 karakter.',
+            'username.required' => 'Email atau username wajib diisi.',
+            'username.max'      => 'Email atau username tidak boleh melebihi 255 karakter.',
             'password.required' => 'Kata sandi wajib diisi.',
         ];
     }

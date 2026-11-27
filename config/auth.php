@@ -116,8 +116,8 @@ return [
 
     /*
     | Masa transisi login dengan email. Bila true, halaman Masuk menampilkan
-    | "Email atau username". Nyalakan setelah LoginRequest menerima email.
+    | "Email atau username" (AuthController menerima keduanya).
     */
-    'login_email' => (bool) env('LOGIN_EMAIL', false),
+    'login_email' => (bool) env('LOGIN_EMAIL', true),
 
 ];

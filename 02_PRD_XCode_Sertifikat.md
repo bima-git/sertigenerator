@@ -96,13 +96,14 @@ Kebutuhan produk secara rinci: peran, kebutuhan fungsional, penomoran, PDF, data
 
 | ID | Kebutuhan | Kriteria terima |
 |---|---|---|
-| AU-01 | Masuk dengan username dan kata sandi. | Kata sandi disimpan dengan mekanisme hashing Laravel (`Hash::make` dan `Hash::check`). |
+| AU-01 | Masuk dengan email atau username, dan kata sandi. | Kata sandi disimpan dengan mekanisme hashing Laravel (`Hash::make` dan `Hash::check`). Email tidak peka huruf besar. Masa transisi (diputuskan 2026-11-27): username tetap diterima sampai semua akun punya email. |
 | AU-02 | Keluar menghapus sesi. | Setelah keluar, halaman terproteksi mengarahkan ke login. |
 | AU-03 | Sesi aman. | session diregenerasi melalui `$request->session()->regenerate()` setelah login, cookie `HttpOnly` dan `SameSite=Lax`, sesi kedaluwarsa setelah 8 jam tanpa aktivitas. |
 | AU-04 | Pembatasan percobaan masuk. | Lima kegagalan berturut-turut mengunci akun 10 menit dan pesan menyebut lamanya. |
 | AU-05 | Semua halaman selain login memerlukan sesi aktif. | Akun nonaktif tidak dapat masuk dan sesinya ditolak pada permintaan berikutnya. |
 | AU-06 | Pengguna mengganti kata sandinya sendiri. | Meminta kata sandi lama, minimal 10 karakter. |
 | AU-07 | Halaman Admin hanya untuk peran Admin. | Operator yang membuka alamat admin menerima halaman 403. |
+| AU-08 | Lupa kata sandi: tautan reset dikirim ke email akun (SMTP). | Pesan setelah meminta tautan sama untuk email terdaftar maupun tidak. Akun nonaktif tidak dikirimi tautan. Tautan berlaku 60 menit dan sekali pakai. Kata sandi baru minimal 10 karakter dan membuka kunci akun. Reset oleh Admin tetap tersedia. |
 
 ### 4.2 Data Kegiatan
 
@@ -179,7 +180,7 @@ Kebutuhan produk secara rinci: peran, kebutuhan fungsional, penomoran, PDF, data
 
 | ID | Kebutuhan | Kriteria terima |
 |---|---|---|
-| PG-01 | Admin menambah pengguna: username, nama, peran, kata sandi awal. | Username unik. |
+| PG-01 | Admin menambah pengguna: username, email, nama, peran, kata sandi awal. | Username unik. Email unik dan boleh kosong untuk akun lama selama masa transisi. |
 | PG-02 | Admin mengubah peran, menonaktifkan, dan mereset kata sandi. | Admin tidak dapat menonaktifkan dirinya sendiri. |
 | PG-03 | Selalu ada minimal satu Admin aktif. | Perubahan yang melanggar ditolak dengan pesan. |
 

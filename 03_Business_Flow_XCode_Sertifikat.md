@@ -278,7 +278,7 @@ Sertifikat tidak dihapus dan tidak diubah isinya setelah terbit.
 
 ## 6. Pesan sistem
 
-Aplikasi ini tidak mengirim email. Pesan hanya tampil di layar.
+Aplikasi hanya mengirim satu jenis email: tautan reset kata sandi (PRD AU-08). Sertifikat tidak dikirim lewat email. Pesan lain hanya tampil di layar.
 
 | Peristiwa | Penerima | Tampilan |
 |---|---|---|
