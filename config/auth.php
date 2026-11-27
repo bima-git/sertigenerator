@@ -114,4 +114,10 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    | Masa transisi login dengan email. Bila true, halaman Masuk menampilkan
+    | "Email atau username". Nyalakan setelah LoginRequest menerima email.
+    */
+    'login_email' => (bool) env('LOGIN_EMAIL', false),
+
 ];

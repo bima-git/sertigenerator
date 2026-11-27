@@ -34,6 +34,15 @@ Route::get('/api/me', [AuthController::class, 'me'])->name('api.me');
 Route::middleware('guest')->group(function () {
     Route::get('/masuk', [AuthController::class, 'create'])->name('login');
     Route::post('/masuk', [AuthController::class, 'store'])->middleware('throttle:10,1')->name('login.attempt');
+
+    // Halaman lupa/reset kata sandi (tampilan Giska). Nama rute mengikuti bawaan Laravel supaya
+    // tautan di email Password broker langsung ke sini. POST password.email dan password.update
+    // dikerjakan modul Bima; selama belum ada, halaman ini hanya mengarahkan ke Admin.
+    Route::view('/lupa-sandi', 'auth.forgot-password')->name('password.request');
+    Route::get('/reset-sandi/{token}', fn (Request $r, string $token) => view('auth.reset-password', [
+        'token' => $token,
+        'email' => (string) $r->query('email', ''),
+    ]))->name('password.reset');
 });
 
 /* Semua halaman lain wajib sesi aktif dan akun aktif (PRD AU-05) */
