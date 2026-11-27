@@ -128,9 +128,19 @@ php artisan db:seed --class=AdminUserSeeder
 # Mengisi master data kegiatan resmi dari dokumen aturan kode XCODE
 php artisan db:seed --class=EventSeeder
 
-# ATAU jalankan seluruh seeder sekaligus:
+# Data contoh untuk dev/demo: 2 operator + 24 sertifikat (6 bulan terakhir, 2 dibatalkan)
+php artisan db:seed --class=DemoDataSeeder
+
+# ATAU jalankan seluruh seeder sekaligus (termasuk data contoh):
 php artisan db:seed
 ```
+
+Catatan data contoh (`DemoDataSeeder`):
+- Tidak berjalan bila `APP_ENV=production`, dan dilewati bila sudah ada sertifikat (tidak dobel).
+- Akun contoh: `operator1` (Rina Wulandari) dan `operator2` (Dimas Prasetyo). Kata sandinya dari `DEMO_PASSWORD` di `.env`; bila kosong, dibuat acak dan dicetak sekali di terminal saat seeder berjalan.
+- Ingin mengulang dari nol: `php artisan migrate:fresh --seed` (menghapus **semua** data lokal).
+
+> **Kenapa data tiap anggota tim berbeda?** Isi database tidak ikut di git. Setiap laptop punya database sendiri (SQLite atau MySQL sesuai `DB_CONNECTION` di `.env` masing-masing), jadi sertifikat yang diterbitkan di satu laptop tidak muncul di laptop lain. Jalankan seeder di atas supaya semua orang punya data contoh yang sama.
 
 ---
 
