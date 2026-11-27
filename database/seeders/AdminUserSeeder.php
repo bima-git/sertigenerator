@@ -48,7 +48,18 @@ class AdminUserSeeder extends Seeder
             );
         }
 
+        $email = trim((string) env('ADMIN_EMAIL', ''));
+        if ($email !== '' && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new RuntimeException('ADMIN_EMAIL bukan alamat email yang valid. Perbaiki nilai ADMIN_EMAIL pada .env.');
+        }
+
         $admin = User::query()->where('username', $username)->first();
+
+        // Backfill: admin lama yang belum punya email diisi dari ADMIN_EMAIL.
+        if ($admin !== null && $email !== '' && $admin->email === null && ! User::query()->where('email', mb_strtolower($email))->exists()) {
+            $admin->update(['email' => $email]);
+            $this->command?->info("Email admin \"{$username}\" diisi dari ADMIN_EMAIL.");
+        }
 
         if ($admin !== null) {
             $this->command?->warn(
@@ -60,6 +71,7 @@ class AdminUserSeeder extends Seeder
 
         User::query()->create([
             'username' => $username,
+            'email' => $email === '' ? null : $email,
             'nama' => $nama,
             'password' => Hash::make($password),
             'peran' => 'admin',

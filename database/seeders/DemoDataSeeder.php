@@ -102,7 +102,7 @@ class DemoDataSeeder extends Seeder
         $hasil = [];
         foreach ([['operator1', 'Rina Wulandari'], ['operator2', 'Dimas Prasetyo']] as [$username, $nama]) {
             $user = User::query()->firstOrCreate(['username' => $username], [
-                'nama' => $nama, 'password' => Hash::make($password), 'peran' => 'operator', 'aktif' => true,
+                'nama' => $nama, 'email' => "{$username}@contoh.test", 'password' => Hash::make($password), 'peran' => 'operator', 'aktif' => true,
             ]);
             if ($user->wasRecentlyCreated) {
                 $this->command?->info("Operator contoh \"{$username}\" dibuat.");

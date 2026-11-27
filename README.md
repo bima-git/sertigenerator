@@ -144,6 +144,16 @@ Catatan data contoh (`DemoDataSeeder`):
 
 ---
 
+### Login dengan email dan reset kata sandi
+
+- Halaman Masuk menerima **email atau username** (masa transisi). Akun lama tanpa email tetap bisa masuk dengan username; Admin mengisi emailnya di **Pengguna → Ubah**. Isi `ADMIN_EMAIL` di `.env` agar akun admin awal ikut punya email.
+- **Lupa kata sandi** (`/lupa-sandi`) mengirim tautan reset ke email akun. Atur pengiriman email di `.env`:
+  - Development: `MAIL_MAILER=log`. Email tidak terkirim, isinya (termasuk tautan reset) ditulis ke `storage/logs/laravel.log`.
+  - Production: `MAIL_MAILER=smtp` beserta `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` dari akun SMTP resmi. **Kredensial hanya di `.env`, jangan di-commit.**
+- Reset kata sandi oleh Admin (tombol **Reset Sandi**) tetap tersedia untuk akun tanpa email.
+
+---
+
 ## 5. Menjalankan Aplikasi
 
 ### Mode Pengembangan (Development)

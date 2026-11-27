@@ -26,6 +26,7 @@ class UserFactory extends Factory
     {
         return [
             'username' => Str::limit(fake()->unique()->userName(), 50, ''),
+            'email' => fake()->unique()->safeEmail(),
             'nama' => Str::limit(fake()->name(), 100, ''),
             'password' => static::$password ??= Hash::make('password'),
             'peran' => 'operator',

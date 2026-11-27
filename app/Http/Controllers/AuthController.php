@@ -43,11 +43,15 @@ class AuthController extends Controller
      */
     public function store(LoginRequest $request): JsonResponse|RedirectResponse
     {
-        $username = $request->input('username');
+        $username = trim((string) $request->input('username'));
         $password = $request->input('password');
 
+        // Masa transisi: field "username" boleh berisi username atau email (email disimpan huruf kecil).
         /** @var User|null $user */
-        $user = User::query()->where('username', $username)->first();
+        $user = User::query()
+            ->where('username', $username)
+            ->orWhere('email', mb_strtolower($username))
+            ->first();
 
         // 1. Periksa apakah akun sedang dalam masa penguncian (AU-04)
         if ($user && $user->terkunci_sampai !== null) {
@@ -118,7 +122,7 @@ class AuthController extends Controller
                 ]);
             }
 
-            $errorMessage = 'Username atau kata sandi tidak cocok.';
+            $errorMessage = 'Email/username atau kata sandi tidak cocok.';
 
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([

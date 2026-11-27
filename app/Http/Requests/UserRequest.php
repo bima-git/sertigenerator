@@ -31,6 +31,10 @@ class UserRequest extends FormRequest
             $merge['username'] = trim($this->username);
         }
 
+        if ($this->has('email') && is_string($this->email)) {
+            $merge['email'] = mb_strtolower(trim($this->email));
+        }
+
         if ($this->has('aktif')) {
             // Form self-edit men-disable checkbox aktif tetapi hidden aktif=0
             // tetap terkirim. Akun sendiri selalu dipaksa aktif oleh
@@ -76,6 +80,13 @@ class UserRequest extends FormRequest
                 $userId
                     ? Rule::unique('users', 'username')->ignore($userId)
                     : 'unique:users,username',
+            ],
+            // Belum wajib: akun lama boleh kosong sampai Admin mengisinya (rencana login email).
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                $userId ? Rule::unique('users', 'email')->ignore($userId) : 'unique:users,email',
             ],
             'peran' => [$userId ? 'nullable' : 'required', 'string', 'in:operator,admin'],
             'aktif' => ['nullable', 'boolean'],
@@ -146,6 +157,9 @@ class UserRequest extends FormRequest
             'username.max' => 'Username tidak boleh melebihi 50 karakter.',
             'username.regex' => 'Username hanya boleh berisi huruf, angka, titik, tanda hubung, dan garis bawah.',
             'username.unique' => 'Username sudah digunakan oleh akun lain.',
+            'email.email' => 'Format email tidak valid, contoh: nama@xcode.co.id.',
+            'email.max' => 'Email tidak boleh melebihi 255 karakter.',
+            'email.unique' => 'Email sudah dipakai akun lain.',
             'peran.required' => 'Peran pengguna wajib dipilih.',
             'peran.in' => 'Peran pengguna harus berupa operator atau admin.',
         ];

@@ -4,7 +4,7 @@
 @section('content')
 @php
     $aksi = [
-        'masuk' => ['Masuk', 'ph-sign-in', 'badge-neutral'], 'keluar' => ['Keluar', 'ph-sign-out', 'badge-neutral'], 'gagal_masuk' => ['Gagal masuk', 'ph-lock-key', 'badge-warning'],
+        'masuk' => ['Masuk', 'ph-sign-in', 'badge-neutral'], 'keluar' => ['Keluar', 'ph-sign-out', 'badge-neutral'], 'reset_sandi' => ['Reset kata sandi', 'ph-key', 'badge-warning'], 'gagal_masuk' => ['Gagal masuk', 'ph-lock-key', 'badge-warning'],
         'terbit' => ['Menerbitkan', 'ph-seal-check', 'badge-success'], 'unduh_ulang' => ['Mengunduh ulang', 'ph-download-simple', 'badge-info'],
         'batal' => ['Membatalkan', 'ph-prohibit', 'badge-danger'], 'ubah_event' => ['Mengubah kegiatan', 'ph-calendar-dots', 'badge-brand'],
         'ubah_user' => ['Mengubah pengguna', 'ph-user-gear', 'badge-brand'],

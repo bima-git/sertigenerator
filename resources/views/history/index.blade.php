@@ -8,7 +8,7 @@
     $hour = (int) now()->format('G');
     $salam = $hour < 11 ? 'Selamat pagi' : ($hour < 15 ? 'Selamat siang' : ($hour < 18 ? 'Selamat sore' : 'Selamat malam'));
     $aksi = [
-        'masuk' => ['masuk ke sistem', 'ph-sign-in', 'badge-neutral'], 'keluar' => ['keluar', 'ph-sign-out', 'badge-neutral'], 'gagal_masuk' => ['gagal masuk', 'ph-lock-key', 'badge-warning'],
+        'masuk' => ['masuk ke sistem', 'ph-sign-in', 'badge-neutral'], 'keluar' => ['keluar', 'ph-sign-out', 'badge-neutral'], 'reset_sandi' => ['mereset kata sandi', 'ph-key', 'badge-warning'], 'gagal_masuk' => ['gagal masuk', 'ph-lock-key', 'badge-warning'],
         'terbit' => ['menerbitkan', 'ph-seal-check', 'badge-success'], 'unduh_ulang' => ['mengunduh ulang', 'ph-download-simple', 'badge-info'],
         'batal' => ['membatalkan', 'ph-prohibit', 'badge-danger'], 'ubah_event' => ['mengubah kegiatan', 'ph-calendar-dots', 'badge-brand'],
         'ubah_user' => ['mengubah pengguna', 'ph-user-gear', 'badge-brand'],
