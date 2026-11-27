@@ -100,12 +100,12 @@ Semua `x`/`y` dalam **milimeter dari sudut kiri atas**, `size` dalam **point**.
 
 `align` hanya menerima `L` dan `C`. Elemen digambar berurutan sesuai urutan array, jadi gambar (logo, tanda tangan) diletakkan lebih dulu agar teks berada di atasnya.
 
-### C. Peta Elemen Seminar (versi 1.3)
+### C. Peta Elemen Seminar (versi 1.4)
 
 | Elemen | Isi | Posisi acuan (mm) |
 |---|---|---|
 | `judul_besar` | "SERTIFIKAT SEMINAR" | x 9,21 / y 36,30, 41 pt |
-| `judul_kegiatan` | `judul_cetak` (auto-shrink) | x 9,21 / y 47,07, 18 pt, max 210 mm, 2 baris |
+| `judul_kegiatan` | `judul_cetak` (auto-shrink, MultiCell valign T) | x 9,21 / y 43,50, 18 pt, max 205 mm, 2 baris |
 | `script_sertifikat` | "Sertifikat" (PinyonScript) | x 33,28 / y 109,14, 135,9 pt |
 | `diberikan_kepada` | teks tetap | x 117,99 / y 122,70, 19,85 pt |
 | `domain` | "xcode.or.id" | x 240,88 / y 71,13, 23 pt |
@@ -156,7 +156,7 @@ Bootcamp **tidak** mencetak nomor, URL verifikasi, dan QR — sama dengan sampel
 
 | Jenis | Versi aktif | Arsip tersedia |
 |---|---|---|
-| `seminar` | 1.3 | 1.2 |
+| `seminar` | 1.4 | 1.2, 1.3 |
 | `bootcamp` | 1.5 | 1.3, 1.4 |
 
 ---
@@ -206,8 +206,8 @@ Ubah angka pada elemen terkait saja. Konversi: **1 pt = 0,352778 mm**. Contoh: t
 ### Langkah 5 — Naikkan versi & arsipkan
 
 ```bash
-cp config/layout/seminar.php config/layout/arsip/seminar-1.3.php   # simpan versi lama
-# ubah 'versi' => '1.4' di config/layout/seminar.php, lalu edit koordinat
+cp config/layout/seminar.php config/layout/arsip/seminar-1.4.php   # simpan versi lama
+# ubah 'versi' => '1.5' di config/layout/seminar.php, lalu edit koordinat
 ```
 
 ### Langkah 6 — Verifikasi ulang
@@ -237,6 +237,13 @@ Seminar (`Ridla Dratistiwa.pdf`, `Syafrizal Devan Pradana.pdf`) sudah tepat, sel
 Garis bawah nama (x 130,22–551,62 pt, tebal 3,18 pt) dan garis tanda tangan (y 526,69 pt, tebal 1,50 pt) juga identik. Bootcamp sama presisi; satu-satunya perbaikan yang lahir dari pengukuran adalah `penanda_tangan` bootcamp yang tadinya `poppins` dan kini `serif_bold` (versi 1.4).
 
 Sisa perbedaan yang **bukan** cacat layout: contoh Ridla memakai subjudul 16 pt sedangkan contoh Syafrizal 18 pt (Canva menyesuaikan per sertifikat). Pita logo memakai aset XCODE untuk semua sertifikat.
+
+### Perbaikan Judul Kegiatan 27 November 2026 (versi 1.4)
+
+- Judul kegiatan yang membungkus kini memakai `MultiCell` dengan `valign = 'T'`; baris pertama berada di `y = 43,50 mm` (sekitar 4,5 mm di bawah batas bawah "SERTIFIKAT SEMINAR") dan baris berikutnya tumbuh ke bawah.
+- Lebar judul dibatasi `max_w = 205 mm`, berhenti sekitar 21,7 mm sebelum pita logo di `x = 235,89 mm`.
+- `TextFitter` tetap mengecilkan font hingga judul muat maksimal dua baris; batas bawah dua baris masih jauh di atas kaligrafi "Sertifikat" (`y = 109,14 mm`).
+- Layout seminar 1.3 dibekukan di `config/layout/arsip/seminar-1.3.php`; sertifikat lama tetap memakai posisi lama.
 
 ### Penyesuaian Tampilan 23 November 2026 (versi 1.3 / 1.5)
 

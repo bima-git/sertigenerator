@@ -106,7 +106,7 @@ final class CertificateRenderer
                 (bool) ($element['balance'] ?? true),
             );
 
-            $this->drawLines($pdf, $element, $hasil->lines, $hasil->size, $family, $style);
+            $this->drawFit($pdf, $element, $hasil->lines, $hasil->size, $family, $style);
         }
 
         $this->drawWatermark($pdf, $mode, $watermarkText);
@@ -349,6 +349,57 @@ final class CertificateRenderer
             false,
             false,
             false,
+        );
+    }
+
+    /**
+     * Menggambar teks hasil fit. Elemen dengan valign T memakai MultiCell agar
+     * baris pertama menjadi batas atas dan baris berikutnya tumbuh ke bawah.
+     *
+     * @param  array<string, mixed>  $element
+     * @param  list<string>  $lines
+     */
+    private function drawFit(
+        TCPDF $pdf,
+        array $element,
+        array $lines,
+        float $size,
+        string $family,
+        string $style,
+    ): void {
+        if (($element['valign'] ?? 'B') !== 'T') {
+            $this->drawLines($pdf, $element, $lines, $size, $family, $style);
+
+            return;
+        }
+
+        $lebar = (float) $element['max_w'];
+        $align = (string) $element['align'];
+        $x = (float) $element['x'];
+
+        // x untuk elemen rata tengah adalah titik tengah, sedangkan MultiCell
+        // menerima tepi kiri kotak.
+        if ($align === 'C') {
+            $x -= $lebar / 2;
+        }
+
+        $pdf->SetFont($family, $style, $size);
+        $pdf->MultiCell(
+            w: $lebar,
+            h: (float) ($element['line_h'] ?? round($size * 0.4, 2)),
+            txt: implode("\n", $lines),
+            border: 0,
+            align: $align,
+            fill: false,
+            ln: 0,
+            x: $x,
+            y: (float) $element['y'],
+            reseth: true,
+            stretch: 0,
+            ishtml: false,
+            autopadding: false,
+            maxh: 0,
+            valign: 'T',
         );
     }
 

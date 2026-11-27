@@ -20,6 +20,9 @@ final class LayoutConfig
     /** Slot font yang boleh dipakai satu elemen. */
     public const FONT_ELEMEN = ['serif', 'serif_bold', 'script', 'sans'];
 
+    /** Penjangkaran vertikal teks hasil fit. */
+    public const VALIGN_ELEMEN = ['T', 'B'];
+
     /**
      * @param  array<string, mixed>  $layouts
      * @param  array<string, mixed>  $arsip  Layout beku dengan kunci "jenis-versi".
@@ -320,6 +323,12 @@ final class LayoutConfig
 
         if (isset($element['balance']) && ! is_bool($element['balance'])) {
             throw new InvalidArgumentException("{$awalan} punya 'balance' yang harus boolean.");
+        }
+
+        if (isset($element['valign']) && (! is_string($element['valign']) || ! in_array($element['valign'], self::VALIGN_ELEMEN, true))) {
+            throw new InvalidArgumentException(
+                "{$awalan} punya 'valign' tidak dikenal. Pilihan: ".implode(', ', self::VALIGN_ELEMEN).'.',
+            );
         }
     }
 }

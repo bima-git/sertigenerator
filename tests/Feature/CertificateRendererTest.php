@@ -135,6 +135,43 @@ final class CertificateRendererTest extends TestCase
 
         $this->assertStringContainsString('Kusumawardhana', $teks);
         $this->assertStringContainsString('Produktivitas Tim', $teks);
+
+        $baseline = $this->baselinesOf($pdf);
+
+        // Koordinat PDF naik ke atas, jadi baris yang lebih rendah angkanya lebih kecil.
+        $this->assertArrayHasKey('SERTIFIKAT SEMINAR', $baseline);
+        $this->assertArrayHasKey('Membangun Aplikasi Web Modern dengan Laravel, React, dan', $baseline);
+        $this->assertArrayHasKey('Kecerdasan Buatan untuk Meningkatkan Produktivitas Tim', $baseline);
+        $this->assertArrayHasKey('Sertifikat', $baseline);
+
+        $this->assertLessThan($baseline['SERTIFIKAT SEMINAR'] - 30, $baseline['Membangun Aplikasi Web Modern dengan Laravel, React, dan']);
+        $this->assertLessThan(
+            $baseline['Membangun Aplikasi Web Modern dengan Laravel, React, dan'],
+            $baseline['Kecerdasan Buatan untuk Meningkatkan Produktivitas Tim'],
+        );
+        $this->assertGreaterThan(
+            $baseline['Sertifikat'] + 100,
+            $baseline['Kecerdasan Buatan untuk Meningkatkan Produktivitas Tim'],
+        );
+    }
+
+    public function test_long_event_title_is_auto_shrunk_instead_of_overflowing(): void
+    {
+        // Pada 18 pt judul ini membutuhkan lebih dari dua baris. TextFitter harus
+        // menurunkan ukuran font sampai dua baris, bukan membiarkan teks meluber.
+        $pdf = $this->renderer->render('seminar', [
+            'nama_peserta' => 'Arief Soekardi',
+            'judul_cetak' => 'Membangun Aplikasi Web Modern dengan Laravel, React, dan Kecerdasan Buatan untuk Meningkatkan Produktivitas Tim dan Kolaborasi Lintas Divisi di Lingkungan Perusahaan Modern',
+            'nomor_lengkap' => '35/001/003/Xcodetraining/X/2026',
+            'tanggal_kota' => 'Yogyakarta, 24 Oktober 2026',
+        ], withBackground: false);
+
+        $this->assertSame(1, preg_match_all('/\/Type \/Page\b/', $pdf));
+
+        $teks = $this->textOf($pdf);
+
+        $this->assertStringContainsString('Meningkatkan Produktivitas Tim dan Kolaborasi Lintas Divisi di Lingkungan Perusahaan Modern', $teks);
+        $this->assertStringNotContainsString('…', $teks);
     }
 
     public function test_writes_pdf_to_file(): void
@@ -355,6 +392,32 @@ final class CertificateRendererTest extends TestCase
         }
 
         return $isi;
+    }
+
+    /**
+     * Mengambil baseline teks dari operator Td/TJ pada stream PDF.
+     *
+     * @return array<string, float>
+     */
+    private function baselinesOf(string $pdf): array
+    {
+        $stream = $this->uncompressed($pdf);
+
+        preg_match_all(
+            '/BT\s+(-?[\d.]+)\s+(-?[\d.]+)\s+Td\s+\[\((.*?)\)\]\s+TJ/s',
+            $stream,
+            $cocok,
+            PREG_SET_ORDER,
+        );
+
+        $baseline = [];
+
+        foreach ($cocok as $baris) {
+            $teks = str_replace(['\\(', '\\)', '\\\\'], ['(', ')', '\\'], $baris[3]);
+            $baseline[$teks] = (float) $baris[2];
+        }
+
+        return $baseline;
     }
 
     /**

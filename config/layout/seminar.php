@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 /*
  * Layout sertifikat seminar/webinar.
+ * Versi 1.4: judul kegiatan memakai MultiCell bertopang atas agar baris
+ * tambahan tumbuh ke bawah dan tidak menabrak judul besar atau kaligrafi.
  * Versi 1.3: pita XCODE di-auto-crop agar menempel ke ornamen latar, nama
  * lebih besar, garis nama lebih tipis, garis tanda tangan diturunkan, nomor
  * dan tanggal diperbesar.
@@ -15,7 +17,7 @@ declare(strict_types=1);
  * Setiap perubahan koordinat wajib menaikkan "versi" dan mengarsipkan berkas lama.
  */
 return [
-    'versi' => '1.3',
+    'versi' => '1.4',
     'background' => 'assets/templates/background.png',
     'font' => [
         'serif' => 'tinos',
@@ -75,11 +77,14 @@ return [
             'type' => 'fit',
             'field' => 'judul_cetak',
             'x' => 9.21,
-            'y' => 47.07,
+            // MultiCell bertopang atas: 4,1 mm di bawah batas bawah judul besar.
+            'y' => 43.50,
             'align' => 'L',
+            'valign' => 'T',
             'size' => 18,
             'min_size' => 12,
-            'max_w' => 210,
+            // Berhenti 21,7 mm sebelum pita logo di x 235,89.
+            'max_w' => 205,
             'max_lines' => 2,
             'line_h' => 7.5,
         ],

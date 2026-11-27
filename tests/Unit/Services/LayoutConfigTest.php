@@ -158,6 +158,28 @@ final class LayoutConfigTest extends TestCase
         new LayoutConfig(['seminar' => $layout]);
     }
 
+    public function test_rejects_unknown_fit_vertical_alignment(): void
+    {
+        $layout = $this->layout();
+        $layout['elements']['nama']['valign'] = 'M';
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("'valign'");
+
+        new LayoutConfig(['seminar' => $layout]);
+    }
+
+    public function test_seminar_event_title_uses_top_aligned_multicell(): void
+    {
+        $judul = $this->shipped('seminar')['elements']['judul_kegiatan'];
+
+        $this->assertSame('T', $judul['valign']);
+        $this->assertSame(43.5, $judul['y']);
+        $this->assertSame(205, $judul['max_w']);
+        $this->assertSame(2, $judul['max_lines']);
+        $this->assertSame(12, $judul['min_size']);
+    }
+
     public function test_rejects_qr_element_without_size(): void
     {
         $layout = $this->layout();
@@ -207,7 +229,7 @@ final class LayoutConfigTest extends TestCase
 
         $config = new LayoutConfig(['seminar' => $layout]);
 
-        $this->assertSame('1.3', $config->get('seminar')['versi']);
+        $this->assertSame('1.4', $config->get('seminar')['versi']);
         $this->assertArrayHasKey('script_sertifikat', $config->get('seminar')['elements']);
         $this->assertArrayHasKey('penanda_tangan', $config->get('seminar')['elements']);
     }
@@ -292,7 +314,7 @@ final class LayoutConfigTest extends TestCase
 
     public function test_shipped_archives_match_their_active_versions(): void
     {
-        foreach ([['seminar', '1.2'], ['bootcamp', '1.3'], ['bootcamp', '1.4']] as [$jenis, $versi]) {
+        foreach ([['seminar', '1.2'], ['seminar', '1.3'], ['bootcamp', '1.3'], ['bootcamp', '1.4']] as [$jenis, $versi]) {
             $arsip = $this->shipped('arsip/'.$jenis.'-'.$versi);
 
             $this->assertSame($versi, $arsip['versi']);
